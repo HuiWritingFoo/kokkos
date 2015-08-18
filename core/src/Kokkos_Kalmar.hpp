@@ -62,6 +62,9 @@
 /*--------------------------------------------------------------------------*/
 
 #include <hc.hpp>
+#include <amp_math.h>
+
+using namespace ::Concurrency::precise_math ;
 
 namespace Kokkos {
 
