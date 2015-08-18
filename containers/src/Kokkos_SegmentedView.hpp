@@ -308,6 +308,7 @@ public:
     return *this;
   }
 
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
   ~SegmentedView() {
     if ( !segments_.tracker().ref_counting()) { return; }
     size_t ref_count = segments_.tracker().ref_count();
@@ -318,6 +319,10 @@ public:
       Kokkos::parallel_for(h_nviews(),Impl::delete_segmented_view<DataType , Arg1Type , Arg2Type, Arg3Type>(*this));
     }
   }
+#else
+  KOKKOS_INLINE_FUNCTION
+  ~SegmentedView() {}
+#endif
 
   KOKKOS_INLINE_FUNCTION
   t_dev get_segment(const int& i) const {
