@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <typeinfo>
 #include <Kalmar/Kokkos_Kalmar_Reduce.hpp>
 
 namespace Kokkos {
@@ -164,9 +165,14 @@ public:
       hc::parallel_for_each( hc::extent<1>(
          policy.end()-policy.begin()) , make_lambda);
 #else
+      printf("ParallelFor A: %s  %i\n",typeid(FunctorType).name(),policy.end()-policy.begin());
+if(policy.end()-policy.begin()==0) return;
+      printf("ParallelFor B: %s  %i\n",typeid(FunctorType).name(),policy.end()-policy.begin());
+
       hc::completion_future fut = hc::parallel_for_each( hc::extent<1>(
          policy.end()-policy.begin()) , *this);
       fut.wait();
+      printf("ParallelFor C: %s  %i\n",typeid(FunctorType).name(),policy.end()-policy.begin());
 #endif
 
     }
@@ -234,6 +240,8 @@ public:
                 , const Policy    & policy
                 , const ViewType  & result_view )
     {
+      printf("Kalmar Reduce\n");
+if(policy.end()-policy.begin()==0) return;
       Kokkos::Impl::reduce_enqueue
         ( policy.end() - policy.begin()
         , functor

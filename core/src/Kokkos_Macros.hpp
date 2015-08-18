@@ -142,7 +142,7 @@
   #define KOKKOS_FORCEINLINE_FUNCTION  __attribute__((amp,cpu)) inline
   #define KOKKOS_INLINE_FUNCTION       __attribute__((amp,cpu)) inline
   #define KOKKOS_FUNCTION              __attribute__((amp,cpu))
-
+  #define KOKKOS_LAMBDA                [=] __attribute__((amp,cpu))
 #endif
 
 #if defined( _OPENMP )
@@ -369,6 +369,7 @@
  */
 
 #if 1 < ( ( defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) ? 1 : 0 ) + \
+          ( defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_KALMAR ) ? 1 : 0 ) + \
           ( defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) ? 1 : 0 ) + \
           ( defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) ? 1 : 0 ) + \
           ( defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL ) ? 1 : 0 ) )
@@ -381,11 +382,14 @@
  *  Priority: CUDA, OPENMP, THREADS, SERIAL
  */
 #if   defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA )
+#elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_KALMAR )
 #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
 #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
 #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
 #elif defined ( KOKKOS_HAVE_CUDA )
 #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA
+#elif defined ( KOKKOS_HAVE_KALMAR )
+#define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_KALMAR
 #elif defined ( KOKKOS_HAVE_OPENMP )
 #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP
 #elif defined ( KOKKOS_HAVE_PTHREAD )
