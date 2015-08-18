@@ -64,7 +64,11 @@
 #include <hc.hpp>
 #include <amp_math.h>
 
+#if defined( __KALMAR_ACCELERATOR__ )
+
 using namespace ::Concurrency::precise_math ;
+
+#endif
 
 namespace Kokkos {
 
