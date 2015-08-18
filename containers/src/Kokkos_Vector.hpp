@@ -76,8 +76,8 @@ private:
 
 
 public:
-  inline Scalar& operator() (int i) const {return DV::h_view(i);};
-  inline Scalar& operator[] (int i) const {return DV::h_view(i);};
+  KOKKOS_INLINE_FUNCTION Scalar& operator() (int i) const {return DV::h_view(i);};
+  KOKKOS_INLINE_FUNCTION Scalar& operator[] (int i) const {return DV::h_view(i);};
 
 
   /* Member functions which behave like std::vector functions */
