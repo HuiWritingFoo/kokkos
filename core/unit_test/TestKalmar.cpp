@@ -150,6 +150,8 @@ TEST_F( kalmar, double_reduce) {
   TestReduce< double ,   Kokkos::Kalmar >( 1000000 );
 }
 
+#if 0
+
 TEST_F( kalmar, long_reduce_dynamic ) {
   TestReduceDynamic< long ,   Kokkos::Kalmar >( 1000000 );
 }
@@ -161,6 +163,8 @@ TEST_F( kalmar, double_reduce_dynamic ) {
 TEST_F( kalmar, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Kalmar >( 1000000 );
 }
+
+#endif
 
 #if 0
 
@@ -316,6 +320,7 @@ TEST_F( kalmar , template_meta_functions )
 
 //----------------------------------------------------------------------------
 
+#if 0
 TEST_F( kalmar , cxx11 )
 {
   if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Kalmar >::value ) {
@@ -331,7 +336,6 @@ TEST_F( kalmar , reduction_deduction )
   TestCXX11::test_reduction_deduction< Kokkos::Kalmar >();
 }
 
-#if 0
 TEST_F( kalmar , team_vector )
 {
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(0) ) );

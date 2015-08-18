@@ -45,7 +45,9 @@
 
 #include <Kokkos_Core.hpp>
 
-#if !defined(KOKKOS_HAVE_CUDA) || defined(__CUDACC__)
+#if ( ! defined(KOKKOS_HAVE_CUDA) || defined(__CUDACC__) ) \
+    && ! defined(KOKKOS_HAVE_KALMAR)
+    
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
