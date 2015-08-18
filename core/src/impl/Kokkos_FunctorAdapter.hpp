@@ -396,20 +396,22 @@ struct FunctorValueInit ;
 template< class FunctorType , class ArgTag , class T , class Enable >
 struct FunctorValueInit< FunctorType , ArgTag , T & , Enable >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  T & init( const FunctorType & f , void * p )
-    { return *( new(p) T() ); };
+  T & init( const FunctorType & f , U * p )
+    { return *( new((void*)p) T() ); };
 };
 
 /* No 'init' function provided for array value */
 template< class FunctorType , class ArgTag , class T , class Enable >
 struct FunctorValueInit< FunctorType , ArgTag , T * , Enable >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  T * init( const FunctorType & f , void * p )
+  T * init( const FunctorType & f , U * p )
     {
       const int n = FunctorValueTraits< FunctorType , ArgTag >::value_count(f);
-      for ( int i = 0 ; i < n ; ++i ) { new( ((T*)p) + i ) T(); }
+      for ( int i = 0 ; i < n ; ++i ) { new( (void*)(((T*)p) + i) ) T(); }
       return (T*)p ;
     }
 };
@@ -429,8 +431,9 @@ struct FunctorValueInit
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  T & init( const FunctorType & f , void * p )
+  T & init( const FunctorType & f , U * p )
     { f.init( *((T*)p) ); return *((T*)p) ; }
 };
 
@@ -449,8 +452,9 @@ struct FunctorValueInit
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  T * init( const FunctorType & f , void * p )
+  T * init( const FunctorType & f , U * p )
     { f.init( (T*)p ); return (T*)p ; }
 };
 
@@ -469,8 +473,9 @@ struct FunctorValueInit
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  T & init( const FunctorType & f , void * p )
+  T & init( const FunctorType & f , U * p )
     { f.init( ArgTag() , *((T*)p) ); return *((T*)p) ; }
 };
 
@@ -489,8 +494,9 @@ struct FunctorValueInit
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  T * init( const FunctorType & f , void * p )
+  T * init( const FunctorType & f , U * p )
     { f.init( ArgTag() , (T*)p ); return (T*)p ; }
 };
 
@@ -569,8 +575,9 @@ struct FunctorValueJoin ;
 template< class FunctorType , class ArgTag , class T , class Enable >
 struct FunctorValueJoin< FunctorType , ArgTag , T & , Enable >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f , volatile U * const lhs , const volatile U * const rhs )
     {
       *((volatile T*)lhs) += *((const volatile T*)rhs);
     }
@@ -580,8 +587,9 @@ struct FunctorValueJoin< FunctorType , ArgTag , T & , Enable >
 template< class FunctorType , class ArgTag , class T , class Enable >
 struct FunctorValueJoin< FunctorType , ArgTag , T * , Enable >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f , volatile U * const lhs , const volatile U * const rhs )
     {
       const int n = FunctorValueTraits<FunctorType,ArgTag>::value_count(f);
 
@@ -604,8 +612,9 @@ struct FunctorValueJoin
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f , volatile U * const lhs , const volatile U * const rhs )
     {
       f.join( ArgTag() , *((volatile T *)lhs) , *((const volatile T *)rhs) );
     }
@@ -626,8 +635,9 @@ struct FunctorValueJoin
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f , volatile U * const lhs , const volatile U * const rhs )
     {
       f.join( *((volatile T *)lhs) , *((const volatile T *)rhs) );
     }
@@ -648,8 +658,9 @@ struct FunctorValueJoin
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f , volatile U * const lhs , const volatile U * const rhs )
     {
       f.join( ArgTag() , (volatile T *)lhs , (const volatile T *)rhs );
     }
@@ -670,8 +681,9 @@ struct FunctorValueJoin
 #endif
   >
 {
+  template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
+  void join( const FunctorType & f , volatile U * const lhs , const volatile U * const rhs )
     {
       f.join( (volatile T *)lhs , (const volatile T *)rhs );
     }

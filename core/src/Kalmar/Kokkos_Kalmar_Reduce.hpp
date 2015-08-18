@@ -56,15 +56,29 @@ template< class FunctorType , typename T >
 void reduce_enqueue(
   const int           szElements ,
   const FunctorType & functor ,
-  T& output_result )
+  T * const output_result ,
+  int const output_length )
 {
-  using ValueInit = Kokkos::Impl::FunctorValueInit< FunctorType , void > ;
-  using ValueJoin = Kokkos::Impl::FunctorValueJoin< FunctorType , void > ;
+  using namespace hc ;
+
+  using ValueTraits = Kokkos::Impl::FunctorValueTraits< FunctorType , void > ;
+  using ValueInit   = Kokkos::Impl::FunctorValueInit< FunctorType , void > ;
+  using ValueJoin   = Kokkos::Impl::FunctorValueJoin< FunctorType , void > ;
+  using ValueFinal  = Kokkos::Impl::FunctorFinal< FunctorType , void > ;
+
+  using pointer_type   = typename ValueTraits::pointer_type ;
+  using reference_type = typename ValueTraits::reference_type ;
+
+  // Prepare to allocate 'sizeof(T) * output_length' reduction scratch
+  // space for each thread within the tile.
+  ts_allocator tsa ;
+  tsa.setDynamicGroupSegmentSize( REDUCE_WAVEFRONT_SIZE * sizeof(T) * output_length );
+
 
   int max_ComputeUnits = 32;
   int numTiles = max_ComputeUnits*32;			/* Max no. of WG for Tahiti(32 compute Units) and 32 is the tuning factor that gives good performance*/
 
-  int length = (REDUCE_WAVEFRONT_SIZE*numTiles);	
+  int length = (REDUCE_WAVEFRONT_SIZE*numTiles);
 
   length = szElements < length ? szElements : length;
   unsigned int residual = length % REDUCE_WAVEFRONT_SIZE;
@@ -75,10 +89,7 @@ void reduce_enqueue(
   if ( numTilesMax < numTiles ) numTiles = numTilesMax ;
 		
   // For storing tiles' contributions:
-  //long * const terms  = new long[szElements];
-  T * const result = new T[numTiles];
-
-  //for ( int i =0 ; i <numTiles ; ++i ) result[i] = 99000 + i ;
+  T * const result = new T[numTiles * output_length ];
 
   hc::extent< 1 > inputExtent(length);
   hc::tiled_extent< 1 >
@@ -96,10 +107,16 @@ void reduce_enqueue(
   {
     hc::completion_future fut = hc::parallel_for_each
       ( tiledExtentReduce
-      , [ = , & functor]
+      , tsa /* tile-static memory allocator */
+      , [ = , & functor , & tsa ]
         ( hc::tiled_index<1> t_idx ) restrict(amp)
         {
-          tile_static T scratch[REDUCE_WAVEFRONT_SIZE];
+          tsa.reset();
+
+          using shared_T_ptr = __attribute__((address_space(3))) T * ;
+
+          shared_T_ptr scratch =
+            (shared_T_ptr) tsa.alloc(REDUCE_WAVEFRONT_SIZE*sizeof(T)*output_length);
 
           int gx = t_idx.global[0];
           int gloId = gx;
@@ -107,51 +124,30 @@ void reduce_enqueue(
           //  Index of this member in its work group.
           unsigned int tileIndex = t_idx.local[0];
 
-          T tmp; 
-          T accumulator = ValueInit::init(functor,&tmp) ;
-
-          // Shared memory within this tile:
-          // ValueInit::init( m_functor , & accumulator );
+          // This thread accumulates into designated
+          // portion of tile-static memory.
+          reference_type accumulator =
+            ValueInit::init(functor,scratch+tileIndex*output_length);
 
           for ( ; gx < szElements ; gx += length ) {
-            // functor( gx , accumulator );
-            // terms[gx] = accumulator ;
-            // terms[gx] = 1 ;
-            {
-#if 0
-              // correct accumulator and terms
-              accumulator += ( terms[gx] = gx + 1 );
-#elif 0
-              // correct accumulator and terms
-              terms[gx] = gx + 1 ;
-              accumulator += terms[gx] ;
-#elif 0
-              // error accumulator and correct terms
-              terms[gx] = functor.value( gx );
-              terms[gx] += 1 ;
-              // accumulator += terms[gx] ;
-#else
-              functor(gx,accumulator);
-              //terms[gx] = accumulator;
-#endif
-            }
+            functor(gx,accumulator);
           }
 
-          scratch[tileIndex] = accumulator;
           t_idx.barrier.wait();
 
+          // Reverse rank of the thread within the tile.
           unsigned int tail = szElements - (t_idx.tile[0] * REDUCE_WAVEFRONT_SIZE);
 
           // Reduce within this tile:
 #if 1
-          _REDUCE_STEP(tail, tileIndex, 128);
-          _REDUCE_STEP(tail, tileIndex, 64);
-          _REDUCE_STEP(tail, tileIndex, 32);
-          _REDUCE_STEP(tail, tileIndex, 16);
-          _REDUCE_STEP(tail, tileIndex, 8);
-          _REDUCE_STEP(tail, tileIndex, 4);
-          _REDUCE_STEP(tail, tileIndex, 2);
-          _REDUCE_STEP(tail, tileIndex, 1);
+          _REDUCE_STEP(tail, tileIndex * output_length , 128 * output_length );
+          _REDUCE_STEP(tail, tileIndex * output_length , 64 * output_length );
+          _REDUCE_STEP(tail, tileIndex * output_length , 32 * output_length );
+          _REDUCE_STEP(tail, tileIndex * output_length , 16 * output_length );
+          _REDUCE_STEP(tail, tileIndex * output_length , 8 * output_length );
+          _REDUCE_STEP(tail, tileIndex * output_length , 4 * output_length );
+          _REDUCE_STEP(tail, tileIndex * output_length , 2 * output_length );
+          _REDUCE_STEP(tail, tileIndex * output_length , 1 * output_length );
 #endif
 
 
@@ -162,30 +158,29 @@ void reduce_enqueue(
           //  Write only the single reduced value for the entire workgroup
           if (tileIndex == 0)
           {
-            result[t_idx.tile[ 0 ]] = scratch[0];
+            const int beg = t_idx.tile[0] * output_length ;
+
+            for ( int i = 0 ; i < output_length ; ++i ) {
+              result[ beg + i ] = ((pointer_type)scratch)[i];
+            }
           }
 
        });
        // End of hc::parallel_for_each
        fut.wait();
-       T acc = result[0];
 
-       // ValueInit::init( m_functor , & acc );
-
-       //for(int i = 0; i < szElements; ++i)
-       //    printf("terms[%d] = %ld\n",i,long(terms[i]));
+       for ( int i = 0 ; i < output_length ; ++i ) {
+         output_result[i] = result[i];
+       }
 
        for(int i = 1; i < numTiles; ++i)
          {
-           //printf("result[%d] = %ld\n",i,long(result[i]));
-           ValueJoin::join( functor , & acc, result + i );
+           ValueJoin::join( functor , output_result, result + i * output_length );
          }
 
        delete[] result ;
 
-       output_result = acc ;
-
-       // TBD: apply functor's final operations
+       ValueFinal::final( functor , output_result );
   }
   catch(std::exception &e)
   {

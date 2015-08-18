@@ -247,7 +247,8 @@ if(policy.end()-policy.begin()==0) return;
       Kokkos::Impl::reduce_enqueue
         ( policy.end() - policy.begin()
         , functor
-        , result_view()
+        , result_view.ptr_on_device()
+        , result_view.dimension_0()
         );
     }
 };

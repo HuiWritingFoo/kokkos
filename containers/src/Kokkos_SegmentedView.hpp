@@ -308,8 +308,9 @@ public:
     return *this;
   }
 
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+  KOKKOS_INLINE_FUNCTION
   ~SegmentedView() {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
     if ( !segments_.tracker().ref_counting()) { return; }
     size_t ref_count = segments_.tracker().ref_count();
     if(ref_count == 1u) {
@@ -318,11 +319,8 @@ public:
       Kokkos::deep_copy(h_nviews,nsegments_);
       Kokkos::parallel_for(h_nviews(),Impl::delete_segmented_view<DataType , Arg1Type , Arg2Type, Arg3Type>(*this));
     }
-  }
-#else
-  KOKKOS_INLINE_FUNCTION
-  ~SegmentedView() {}
 #endif
+  }
 
   KOKKOS_INLINE_FUNCTION
   t_dev get_segment(const int& i) const {
