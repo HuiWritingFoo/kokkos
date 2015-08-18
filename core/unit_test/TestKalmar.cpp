@@ -138,16 +138,8 @@ TEST_F( kalmar, view_subview_right_3 ) {
 TEST_F( kalmar , range_tag )
 {
   TestRange< Kokkos::Kalmar >::test_for(1000);
-  // TestRange< Kokkos::Kalmar >::test_reduce(1000);
+  TestRange< Kokkos::Kalmar >::test_reduce(1000);
   // TestRange< Kokkos::Kalmar >::test_scan(1000);
-}
-
-#if 0
-
-TEST_F( kalmar , team_tag )
-{
-  TestTeamPolicy< Kokkos::Kalmar >::test_for(1000);
-  TestTeamPolicy< Kokkos::Kalmar >::test_reduce(1000);
 }
 
 TEST_F( kalmar, long_reduce) {
@@ -168,6 +160,14 @@ TEST_F( kalmar, double_reduce_dynamic ) {
 
 TEST_F( kalmar, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Kalmar >( 1000000 );
+}
+
+#if 0
+
+TEST_F( kalmar , team_tag )
+{
+  TestTeamPolicy< Kokkos::Kalmar >::test_for(1000);
+  TestTeamPolicy< Kokkos::Kalmar >::test_reduce(1000);
 }
 
 TEST_F( kalmar, team_long_reduce) {
@@ -222,7 +222,6 @@ TEST_F( kalmar , atomics )
 #endif
 }
 
-#if 0
 TEST_F( kalmar , view_remap )
 {
   enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };
@@ -275,6 +274,8 @@ TEST_F( kalmar , view_aggregate )
 
 //----------------------------------------------------------------------------
 
+#if 0
+
 TEST_F( kalmar , scan )
 {
   TestScan< Kokkos::Kalmar >::test_range( 1 , 1000 );
@@ -289,6 +290,8 @@ TEST_F( kalmar , team_scan )
   TestScanTeam< Kokkos::Kalmar >( 10000 );
   TestScanTeam< Kokkos::Kalmar >( 10000 );
 }
+
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -313,7 +316,6 @@ TEST_F( kalmar , template_meta_functions )
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
 TEST_F( kalmar , cxx11 )
 {
   if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Kalmar >::value ) {
@@ -323,14 +325,13 @@ TEST_F( kalmar , cxx11 )
     ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Kalmar >(4) ) );
   }
 }
-#endif
 
-#if defined (KOKKOS_HAVE_CXX11)
 TEST_F( kalmar , reduction_deduction )
 {
   TestCXX11::test_reduction_deduction< Kokkos::Kalmar >();
 }
 
+#if 0
 TEST_F( kalmar , team_vector )
 {
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(0) ) );
@@ -345,8 +346,6 @@ TEST_F( kalmar , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(9) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(10) ) );
 }
-#endif
-
 #endif
 
 } // namespace test

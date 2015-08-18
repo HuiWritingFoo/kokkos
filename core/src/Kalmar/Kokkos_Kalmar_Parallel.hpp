@@ -46,27 +46,7 @@
 
 namespace Kokkos {
 
-  struct kalmar_team_member_type {
-    enum {TEAM_SIZE = 256 }; 
-    typedef TeamPolicy<Kokkos::Kalmar,void,Kokkos::Kalmar> TeamPolicy;
-    KOKKOS_INLINE_FUNCTION int league_rank() const ;
-    KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
-    KOKKOS_INLINE_FUNCTION int team_rank() const ;
-    KOKKOS_INLINE_FUNCTION int team_size() const { return TEAM_SIZE ; }
-
-    KOKKOS_INLINE_FUNCTION
-    kalmar_team_member_type( const TeamPolicy & arg_policy
-               , const hc::tiled_index< 1 > & arg_idx )
-      : m_league_size( arg_policy.league_size() )
-      , m_league_rank( arg_idx.tile[0]  )
-      , m_team_rank( arg_idx.local[0] )
-      {}
-
-  private:
-    int m_league_size ;
-    int m_league_rank ;
-    int m_team_rank ;
-  };
+struct kalmar_team_member_type ;
 
 template< class Arg0 , class Arg1 >
 class TeamPolicy< Arg0 , Arg1 , Kokkos::Kalmar > {
@@ -111,6 +91,28 @@ public:
   */
   typedef kalmar_team_member_type member_type;
 };
+
+  struct kalmar_team_member_type {
+    enum {TEAM_SIZE = 256 }; 
+    typedef TeamPolicy<Kokkos::Kalmar,void,Kokkos::Kalmar> TeamPolicy;
+    KOKKOS_INLINE_FUNCTION int league_rank() const ;
+    KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
+    KOKKOS_INLINE_FUNCTION int team_rank() const ;
+    KOKKOS_INLINE_FUNCTION int team_size() const { return TEAM_SIZE ; }
+
+    KOKKOS_INLINE_FUNCTION
+    kalmar_team_member_type( const TeamPolicy & arg_policy
+               , const hc::tiled_index< 1 > & arg_idx )
+      : m_league_size( arg_policy.league_size() )
+      , m_league_rank( arg_idx.tile[0]  )
+      , m_team_rank( arg_idx.local[0] )
+      {}
+
+  private:
+    int m_league_size ;
+    int m_league_rank ;
+    int m_team_rank ;
+  };
 
 } // namespace Kokkos
 

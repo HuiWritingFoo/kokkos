@@ -13,6 +13,10 @@ case $key in
     --prefix*)
     PREFIX="${key#*=}"
     ;;    
+    --with-kalmar)
+    KOKKOS_DEVICES="${KOKKOS_DEVICES},Kalmar"
+    COMPILER=clang++
+    ;;
     --with-cuda)
     KOKKOS_DEVICES="${KOKKOS_DEVICES},Cuda"
     CUDA_PATH_NVCC=`which nvcc`
