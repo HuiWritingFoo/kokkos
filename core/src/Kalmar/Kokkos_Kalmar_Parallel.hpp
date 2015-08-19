@@ -45,8 +45,9 @@
 #include <Kalmar/Kokkos_Kalmar_Reduce.hpp>
 
 namespace Kokkos {
-
-struct kalmar_team_member_type ;
+namespace Impl {
+  struct KalmarTeamMember ;
+}
 
 template< class Arg0 , class Arg1 >
 class TeamPolicy< Arg0 , Arg1 , Kokkos::Kalmar > {
@@ -90,24 +91,33 @@ public:
     int m_team_rank ;
   };
   */
-  typedef kalmar_team_member_type member_type;
+  typedef Impl::KalmarTeamMember member_type;
 };
 
-  struct kalmar_team_member_type {
+namespace Impl {
+  struct KalmarTeamMember {
     typedef TeamPolicy<Kokkos::Kalmar,void,Kokkos::Kalmar> TeamPolicy;
     KOKKOS_INLINE_FUNCTION int league_rank() const { return idx.tile[0] ; }
     KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
-    KOKKOS_INLINE_FUNCTION int team_rank() const { return idx.local[0] ; }
+    KOKKOS_INLINE_FUNCTION int team_rank() const { return idx.local[0]/m_vector_length ; }
     KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
 
 
     KOKKOS_INLINE_FUNCTION
-    kalmar_team_member_type( const hc::tiled_index< 1 > & arg_idx, int league_size_,int team_size_ )
+    KalmarTeamMember( const hc::tiled_index< 1 > & arg_idx, int league_size_,int team_size_ )
       : m_league_size( league_size_ )
       , m_team_size( team_size_ )
+      , m_vector_length( 1 )
       , idx( arg_idx )
       {}
 
+    KOKKOS_INLINE_FUNCTION
+    KalmarTeamMember( const hc::tiled_index< 1 > & arg_idx, int league_size_,int team_size_,int vector_length_ )
+      : m_league_size( league_size_ )
+      , m_team_size( team_size_ )
+      , m_vector_length( vector_length_ )
+      , idx( arg_idx )
+      {}
 
     KOKKOS_INLINE_FUNCTION
     void team_barrier() const {
@@ -118,9 +128,11 @@ public:
   private:
     int m_league_size ;
     int m_team_size ;
+  public:
+    int m_vector_length ;
     hc::tiled_index<1> idx;
   };
-
+}
 } // namespace Kokkos
 
 namespace Kokkos {
@@ -230,7 +242,7 @@ public:
       {
         using member_type = typename Policy::member_type ;
         
-        this->m_functor( kalmar_team_member_type( policy , idx ) );
+        this->m_functor( KalmarTeamMember( policy , idx ) );
       };
 
       hc::extent< 1 >
@@ -285,6 +297,127 @@ if(policy.end()-policy.begin()==0) return;
     }
 };
 
+}
+}
+
+namespace Kokkos {
+namespace Impl {
+  template<typename iType>
+  struct TeamThreadRangeBoundariesStruct<iType,KalmarTeamMember> {
+    typedef iType index_type;
+    const iType start;
+    const iType end;
+    const iType increment;
+    const KalmarTeamMember& thread;
+
+    KOKKOS_INLINE_FUNCTION
+    TeamThreadRangeBoundariesStruct (const KalmarTeamMember& thread_, const iType& count):
+      start( thread_.team_rank() ),
+      end( count ),
+      increment( thread_.team_size() ),
+      thread(thread_)
+    {}
+    KOKKOS_INLINE_FUNCTION
+    TeamThreadRangeBoundariesStruct (const KalmarTeamMember& thread_,  const iType& begin_, const iType& end_):
+      start( begin_ + thread_.team_rank() ),
+      end( end_ ),
+      increment( thread_.team_size() ),
+      thread(thread_)
+    {}
+  };
+
+}
+}
+
+namespace Kokkos {
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadRangeBoundariesStruct<iType,Impl::KalmarTeamMember>
+  TeamThreadRange(const Impl::KalmarTeamMember& thread, const iType& count) {
+  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::KalmarTeamMember>(thread,count);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadRangeBoundariesStruct<iType,Impl::KalmarTeamMember>
+  TeamThreadRange(const Impl::KalmarTeamMember& thread, const iType& begin, const iType& end) {
+  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::KalmarTeamMember>(thread,begin,end);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::KalmarTeamMember >
+  ThreadVectorRange(const Impl::KalmarTeamMember& thread, const iType& count) {
+  return Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::KalmarTeamMember >(thread,count);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadSingleStruct<Impl::KalmarTeamMember> PerTeam(const Impl::KalmarTeamMember& thread) {
+  return Impl::ThreadSingleStruct<Impl::KalmarTeamMember>(thread);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::VectorSingleStruct<Impl::KalmarTeamMember> PerThread(const Impl::KalmarTeamMember& thread) {
+  return Impl::VectorSingleStruct<Impl::KalmarTeamMember>(thread);
+}
+
+
+template<class FunctorType>
+KOKKOS_INLINE_FUNCTION
+void single(const Impl::VectorSingleStruct<Impl::KalmarTeamMember>& single_struct, const FunctorType& lambda) {
+  if( single_struct.team_member.idx.local[0]%single_struct.team_member.m_vector_length == 0) lambda();
+}
+
+template<class FunctorType>
+KOKKOS_INLINE_FUNCTION
+void single(const Impl::ThreadSingleStruct<Impl::KalmarTeamMember>& single_struct, const FunctorType& lambda) {
+  if( single_struct.team_member.idx.tile[0] == 0 ) lambda();
+}
+
+//template<class FunctorType, class ValueType>
+//KOKKOS_INLINE_FUNCTION
+//void single(const Impl::VectorSingleStruct<Impl::KalmarTeamMember>& single_struct, const FunctorType& lambda, ValueType& val) {
+//  if( single_struct.team_member.idx.local[0]%single_struct.team_member.idx.m_vector_length == 0) lambda(val);
+//  val = shfl(val,0,blockDim.x);
+//}
+
+//template<class FunctorType, class ValueType>
+//KOKKOS_INLINE_FUNCTION
+//void single(const Impl::ThreadSingleStruct<Impl::KalmarTeamMember>& single_struct, const FunctorType& lambda, ValueType& val) {
+//  if( single_struct.team_member.idx.local[0] == 0 ) {
+//    lambda(val);
+//  }
+//  single_struct.team_member.team_broadcast(val,0);
+//}
+
+}
+
+namespace Kokkos {
+  /** \brief  Inter-thread parallel_for. Executes lambda(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
+   * This functionality requires C++11 support.*/
+template<typename iType, class Lambda>
+KOKKOS_INLINE_FUNCTION
+void parallel_for(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::KalmarTeamMember>& loop_boundaries, const Lambda& lambda) {
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
+    lambda(i);
+}
+
+}
+
+namespace Kokkos {
+/** \brief  Intra-thread vector parallel_for. Executes lambda(iType i) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
+ * This functionality requires C++11 support.*/
+template<typename iType, class Lambda>
+KOKKOS_INLINE_FUNCTION
+void parallel_for(const Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::KalmarTeamMember >&
+    loop_boundaries, const Lambda& lambda) {
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
+    lambda(i);
 }
 }
 
