@@ -123,6 +123,10 @@ void reduce_enqueue(
           reference_type accumulator =
             ValueInit::init(functor,scratch+tileIndex*output_length);
 
+          // Requires calling initialization a second time
+          // due to unresolved behavior (bug?) in the Kalmar compiler
+          ValueInit::init(functor,scratch+tileIndex*output_length);
+
           for ( ; gx < szElements ; gx += length ) {
             functor(gx,accumulator);
           }
