@@ -23,7 +23,6 @@
 #define KOKKOS_KALMAR_AMP_REDUCE_INL
 
 
-#if 1
 // Issue: taking the address of a 'tile_static' variable
 // may not dereference properly ???
 #define REDUCE_WAVEFRONT_SIZE 256 //64
@@ -32,15 +31,8 @@ if ((_IDX < _W) && ((_IDX + _W) < _LENGTH)) {\
       ValueJoin::join( functor , & scratch[_IDX] , & scratch[ _IDX + _W ] ); \
 }\
     t_idx.barrier.wait();
-#else
 
-#define REDUCE_WAVEFRONT_SIZE 256 //64
-#define _REDUCE_STEP(_LENGTH, _IDX, _W) \
-if ((_IDX < _W) && ((_IDX + _W) < _LENGTH)) {\
-        scratch[_IDX] += scratch[ _IDX + _W ] ; \
-}\
-    t_idx.barrier.wait();
-#endif
+#include <iostream>
 
 #include <algorithm>
 #include <type_traits>
@@ -61,13 +53,13 @@ void reduce_enqueue(
 {
   using namespace hc ;
 
-  using ValueTraits = Kokkos::Impl::FunctorValueTraits< FunctorType , void > ;
-  using ValueInit   = Kokkos::Impl::FunctorValueInit< FunctorType , void > ;
-  using ValueJoin   = Kokkos::Impl::FunctorValueJoin< FunctorType , void > ;
-  using ValueFinal  = Kokkos::Impl::FunctorFinal< FunctorType , void > ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit< FunctorType , void >   ValueInit ;
+  typedef Kokkos::Impl::FunctorValueJoin< FunctorType , void >   ValueJoin ;
+  typedef Kokkos::Impl::FunctorFinal< FunctorType , void >       ValueFinal ;
 
-  using pointer_type   = typename ValueTraits::pointer_type ;
-  using reference_type = typename ValueTraits::reference_type ;
+  typedef typename ValueTraits::pointer_type   pointer_type ;
+  typedef typename ValueTraits::reference_type reference_type ;
 
   // Prepare to allocate 'sizeof(T) * output_length' reduction scratch
   // space for each thread within the tile.
@@ -87,7 +79,7 @@ void reduce_enqueue(
   const int numTilesMax =( szElements + REDUCE_WAVEFRONT_SIZE - 1 ) / REDUCE_WAVEFRONT_SIZE ;
 
   if ( numTilesMax < numTiles ) numTiles = numTilesMax ;
-		
+
   // For storing tiles' contributions:
   T * const result = new T[numTiles * output_length ];
 
@@ -96,13 +88,15 @@ void reduce_enqueue(
     tiledExtentReduce = inputExtent.tile(REDUCE_WAVEFRONT_SIZE);
 
   // AMP doesn't have APIs to get CU capacity. Launchable size is great though.
-/*
-  printf("reduce_enqueue szElements %d tiledExtentReduce %d length %d\n"
+#if 1
+  printf("reduce_enqueue T = \"%s\" szElements %d length %d output_length %d numTiles %d\n"
+        , typeid(T).name()
         , szElements
-        , tiledExtentReduce.tile_dim0
         , length
+        , output_length
+        , numTiles
         );
-*/
+#endif
   try
   {
     hc::completion_future fut = hc::parallel_for_each
@@ -113,10 +107,10 @@ void reduce_enqueue(
         {
           tsa.reset();
 
-          using shared_T_ptr = __attribute__((address_space(3))) T * ;
+          typedef __attribute__((address_space(3))) T shared_T ;
 
-          shared_T_ptr scratch =
-            (shared_T_ptr) tsa.alloc(REDUCE_WAVEFRONT_SIZE*sizeof(T)*output_length);
+          shared_T * const scratch =
+            (shared_T *) tsa.alloc(REDUCE_WAVEFRONT_SIZE*sizeof(T)*output_length);
 
           int gx = t_idx.global[0];
           int gloId = gx;
@@ -135,21 +129,17 @@ void reduce_enqueue(
 
           t_idx.barrier.wait();
 
-          // Reverse rank of the thread within the tile.
-          unsigned int tail = szElements - (t_idx.tile[0] * REDUCE_WAVEFRONT_SIZE);
-
           // Reduce within this tile:
 #if 1
-          _REDUCE_STEP(tail, tileIndex * output_length , 128 * output_length );
-          _REDUCE_STEP(tail, tileIndex * output_length , 64 * output_length );
-          _REDUCE_STEP(tail, tileIndex * output_length , 32 * output_length );
-          _REDUCE_STEP(tail, tileIndex * output_length , 16 * output_length );
-          _REDUCE_STEP(tail, tileIndex * output_length , 8 * output_length );
-          _REDUCE_STEP(tail, tileIndex * output_length , 4 * output_length );
-          _REDUCE_STEP(tail, tileIndex * output_length , 2 * output_length );
-          _REDUCE_STEP(tail, tileIndex * output_length , 1 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 128 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 64 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 32 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 16 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 8 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 4 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 2 * output_length );
+          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 1 * output_length );
 #endif
-
 
           //  Abort threads that are passed the end of the input vector
           if (gloId >= szElements)
@@ -169,12 +159,22 @@ void reduce_enqueue(
        // End of hc::parallel_for_each
        fut.wait();
 
+       std::cout << "result[0] = {" ;
        for ( int i = 0 ; i < output_length ; ++i ) {
+         std::cout << " " ;
+         std::cout << result[i] ;
          output_result[i] = result[i];
        }
+       std::cout << " }" << std::endl ;
 
        for(int i = 1; i < numTiles; ++i)
          {
+           std::cout << "join result[" << i << "] = {" ;
+           for ( int j = 0 ; j < output_length ; ++j ) {
+             std::cout << " " ;
+             std::cout << result[i*output_length+j] ;
+           }
+           std::cout << " }" << std::endl ;
            ValueJoin::join( functor , output_result, result + i * output_length );
          }
 

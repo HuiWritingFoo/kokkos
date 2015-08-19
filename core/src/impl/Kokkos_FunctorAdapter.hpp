@@ -399,7 +399,10 @@ struct FunctorValueInit< FunctorType , ArgTag , T & , Enable >
   template< typename U >
   KOKKOS_FORCEINLINE_FUNCTION static
   T & init( const FunctorType & f , U * p )
-    { return *( new((void*)p) T() ); };
+    {
+      new((void*)p) T();
+      return *((T*)p);
+    };
 };
 
 /* No 'init' function provided for array value */

@@ -108,8 +108,8 @@ public:
   /// parallel using the View's default execution space).
 #if defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
   typedef Kokkos::OpenMP   execution_space ;
-#elif defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_KALMAR )
-  typedef Kokkos::Kalmar   execution_space ;
+// #elif defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_KALMAR )
+//   typedef Kokkos::Kalmar   execution_space ;
 #elif defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
   typedef Kokkos::Threads  execution_space ;
 #elif defined( KOKKOS_HAVE_OPENMP )

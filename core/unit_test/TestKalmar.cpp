@@ -142,6 +142,8 @@ TEST_F( kalmar , range_tag )
   // TestRange< Kokkos::Kalmar >::test_scan(1000);
 }
 
+#if 0
+
 TEST_F( kalmar, long_reduce) {
   TestReduce< long ,   Kokkos::Kalmar >( 1000000 );
 }
@@ -149,8 +151,6 @@ TEST_F( kalmar, long_reduce) {
 TEST_F( kalmar, double_reduce) {
   TestReduce< double ,   Kokkos::Kalmar >( 1000000 );
 }
-
-#if 0
 
 TEST_F( kalmar, long_reduce_dynamic ) {
   TestReduceDynamic< long ,   Kokkos::Kalmar >( 1000000 );

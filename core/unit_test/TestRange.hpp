@@ -133,11 +133,11 @@ printf("TestRange::test_for error at %d != %d\n",i,m_flags(i));
 
       Kokkos::parallel_reduce( "TestKernelReduce" , Kokkos::RangePolicy<ExecSpace>(0,N) , functor , total );
       // sum( 0 .. N-1 )
-      ASSERT_EQ( size_t((N-1)*(N)/2) , size_t(total) );
+      ASSERT_EQ( size_t(((N-1)*(N))/2) , size_t(total) );
 
       Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace,OffsetTag>(0,N) , functor , total );
       // sum( 1 .. N )
-      ASSERT_EQ( size_t((N)*(N+1)/2) , size_t(total) );
+      ASSERT_EQ( size_t(((N)*(N+1))/2) , size_t(total) );
     }
 
   KOKKOS_INLINE_FUNCTION
