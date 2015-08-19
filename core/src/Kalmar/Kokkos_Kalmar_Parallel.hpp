@@ -95,24 +95,30 @@ public:
 
   struct kalmar_team_member_type {
     typedef TeamPolicy<Kokkos::Kalmar,void,Kokkos::Kalmar> TeamPolicy;
-    KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
+    KOKKOS_INLINE_FUNCTION int league_rank() const { return idx.tile[0] ; }
     KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
-    KOKKOS_INLINE_FUNCTION int team_rank() const { return m_team_rank ; }
+    KOKKOS_INLINE_FUNCTION int team_rank() const { return idx.local[0] ; }
     KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
+
 
     KOKKOS_INLINE_FUNCTION
     kalmar_team_member_type( const hc::tiled_index< 1 > & arg_idx, int league_size_,int team_size_ )
       : m_league_size( league_size_ )
-      , m_league_rank( arg_idx.tile[0]  )
       , m_team_size( team_size_ )
-      , m_team_rank( arg_idx.local[0] )
+      , idx( arg_idx )
       {}
 
+
+    KOKKOS_INLINE_FUNCTION
+    void team_barrier() const {
+      idx.barrier.wait();
+    }
+
+    
   private:
     int m_league_size ;
-    int m_league_rank ;
     int m_team_size ;
-    int m_team_rank ;
+    hc::tiled_index<1> idx;
   };
 
 } // namespace Kokkos
