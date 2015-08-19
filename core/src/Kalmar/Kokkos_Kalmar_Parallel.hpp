@@ -53,6 +53,7 @@ class TeamPolicy< Arg0 , Arg1 , Kokkos::Kalmar > {
 public:
   enum { TEAM_SIZE = 256 };
   int m_league_size ;
+  int m_team_size ;
 
   using execution_policy = TeamPolicy ;
   using execution_space  = Kokkos::Kalmar ;
@@ -60,10 +61,10 @@ public:
 
   TeamPolicy( const int arg_league_size
             , const int arg_team_size )
-    : m_league_size( arg_league_size )
+    : m_league_size( arg_league_size ), m_team_size( arg_team_size )
     {}
 
-  KOKKOS_INLINE_FUNCTION int team_size() const { return TEAM_SIZE ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
   KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
 
   //This is again a reference thing from other module error 
@@ -93,25 +94,31 @@ public:
 };
 
   struct kalmar_team_member_type {
-    enum {TEAM_SIZE = 256 }; 
     typedef TeamPolicy<Kokkos::Kalmar,void,Kokkos::Kalmar> TeamPolicy;
-    KOKKOS_INLINE_FUNCTION int league_rank() const ;
+    KOKKOS_INLINE_FUNCTION int league_rank() const { return idx.tile[0] ; }
     KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
-    KOKKOS_INLINE_FUNCTION int team_rank() const ;
-    KOKKOS_INLINE_FUNCTION int team_size() const { return TEAM_SIZE ; }
+    KOKKOS_INLINE_FUNCTION int team_rank() const { return idx.local[0] ; }
+    KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
+
 
     KOKKOS_INLINE_FUNCTION
-    kalmar_team_member_type( const TeamPolicy & arg_policy
-               , const hc::tiled_index< 1 > & arg_idx )
-      : m_league_size( arg_policy.league_size() )
-      , m_league_rank( arg_idx.tile[0]  )
-      , m_team_rank( arg_idx.local[0] )
+    kalmar_team_member_type( const hc::tiled_index< 1 > & arg_idx, int league_size_,int team_size_ )
+      : m_league_size( league_size_ )
+      , m_team_size( team_size_ )
+      , idx( arg_idx )
       {}
 
+
+    KOKKOS_INLINE_FUNCTION
+    void team_barrier() const {
+      idx.barrier.wait();
+    }
+
+    
   private:
     int m_league_size ;
-    int m_league_rank ;
-    int m_team_rank ;
+    int m_team_size ;
+    hc::tiled_index<1> idx;
   };
 
 } // namespace Kokkos
@@ -167,14 +174,11 @@ public:
       hc::parallel_for_each( hc::extent<1>(
          policy.end()-policy.begin()) , make_lambda);
 #else
-      printf("ParallelFor A: %s  %i\n",typeid(FunctorType).name(),policy.end()-policy.begin());
 if(policy.end()-policy.begin()==0) return;
-      printf("ParallelFor B: %s  %i\n",typeid(FunctorType).name(),policy.end()-policy.begin());
 
       hc::completion_future fut = hc::parallel_for_each( hc::extent<1>(
          policy.end()-policy.begin()) , *this);
       fut.wait();
-      printf("ParallelFor C: %s  %i\n",typeid(FunctorType).name(),policy.end()-policy.begin());
 #endif
 
     }
@@ -188,7 +192,33 @@ class ParallelFor< FunctorType
 {
   using Policy = Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Kalmar > ;
   const FunctorType& m_functor ;
+  int league_size;
+  int team_size;
 public:
+  template<typename Tag>
+  KOKKOS_INLINE_FUNCTION
+  static
+  void driver(const FunctorType& functor,
+              typename std::enable_if< std::is_same<Tag, void>::value,
+                                       typename Policy::member_type const & >::type index) { functor(index); }
+
+  template<typename Tag>
+  KOKKOS_INLINE_FUNCTION
+  static
+  void driver(const FunctorType& functor,
+              typename std::enable_if< !std::is_same<Tag, void>::value,
+                                       typename Policy::member_type const & >::type index) { functor(Tag(), index); }
+
+//  KOKKOS_INLINE_FUNCTION
+//  static
+//  void driver(const FunctorType& functor, typename Policy::member_type const& index) { functor(index); }
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const hc::tiled_index<1> & idx ) const
+    {
+       ParallelFor::template driver<void> (m_functor, typename Policy::member_type(idx,league_size,team_size));
+    }
+
+
   inline
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
@@ -211,16 +241,19 @@ public:
 
       hc::parallel_for_each( team_extent , make_lambda );
 #else
+      league_size = policy.league_size();
+      team_size = policy.team_size();
       hc::extent< 1 >
-        flat_extent( policy.league_size() * 256 );
+        flat_extent( policy.league_size() * policy.team_size() );
 
       hc::tiled_extent< 1 > team_extent =
-        flat_extent.tile(256);
+        flat_extent.tile(policy.team_size());
 
       hc::completion_future fut = hc::parallel_for_each( team_extent , *this );
       fut.wait();
 #endif
     }
+
 };
 
 //----------------------------------------------------------------------------
@@ -242,7 +275,6 @@ public:
                 , const Policy    & policy
                 , const ViewType  & result_view )
     {
-      printf("Kalmar Reduce\n");
 if(policy.end()-policy.begin()==0) return;
       Kokkos::Impl::reduce_enqueue
         ( policy.end() - policy.begin()
