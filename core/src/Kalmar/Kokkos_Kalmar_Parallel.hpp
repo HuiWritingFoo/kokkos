@@ -288,7 +288,7 @@ public:
                 , const ViewType  & result_view )
     {
 if(policy.end()-policy.begin()==0) return;
-      Kokkos::Impl::reduce_enqueue
+      Kokkos::Impl::reduce_enqueue< typename Policy::work_tag >
         ( policy.end() - policy.begin()
         , functor
         , result_view.ptr_on_device()

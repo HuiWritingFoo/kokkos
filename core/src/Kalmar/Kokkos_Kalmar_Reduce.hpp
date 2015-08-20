@@ -42,9 +42,42 @@ if ((_IDX < _W) && ((_IDX + _W) < _LENGTH)) {\
 namespace Kokkos {
 namespace Impl {
 
+template< typename Tag , class FunctorType >
+void reduce_enqueue_driver
+  ( const FunctorType & functor
+  , typename Kokkos::Impl::FunctorValueTraits< FunctorType , Tag >::reference_type accumulator
+  , const int gx_begin
+  , const int gx_end
+  , typename std::enable_if< std::is_same<Tag,void>::value
+                           , const int >::type gx_stride
+  )
+  restrict(amp)
+{
+  for ( int gx = gx_begin ; gx < gx_end ; gx += gx_stride ) {
+    functor(gx,accumulator);
+  }
+}
+
+template< typename Tag , class FunctorType >
+void reduce_enqueue_driver
+  ( const FunctorType & functor
+  , typename Kokkos::Impl::FunctorValueTraits< FunctorType , Tag >::reference_type accumulator
+  , const int gx_begin
+  , const int gx_end
+  , typename std::enable_if< ! std::is_same<Tag,void>::value
+                           , const int >::type gx_stride
+  )
+  restrict(amp)
+{
+  const Tag tag ;
+  for ( int gx = gx_begin ; gx < gx_end ; gx += gx_stride ) {
+    functor(tag,gx,accumulator);
+  }
+}
+
 // This is the base implementation of reduction that is called by all of the convenience wrappers below.
 // first and last must be iterators from a DeviceVector
-template< class FunctorType , typename T >
+template< class Tag , class FunctorType , typename T >
 void reduce_enqueue(
   const int           szElements ,
   const FunctorType & functor ,
@@ -53,10 +86,10 @@ void reduce_enqueue(
 {
   using namespace hc ;
 
-  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
-  typedef Kokkos::Impl::FunctorValueInit< FunctorType , void >   ValueInit ;
-  typedef Kokkos::Impl::FunctorValueJoin< FunctorType , void >   ValueJoin ;
-  typedef Kokkos::Impl::FunctorFinal< FunctorType , void >       ValueFinal ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , Tag > ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit< FunctorType , Tag >   ValueInit ;
+  typedef Kokkos::Impl::FunctorValueJoin< FunctorType , Tag >   ValueJoin ;
+  typedef Kokkos::Impl::FunctorFinal< FunctorType , Tag >       ValueFinal ;
 
   typedef typename ValueTraits::pointer_type   pointer_type ;
   typedef typename ValueTraits::reference_type reference_type ;
@@ -65,7 +98,6 @@ void reduce_enqueue(
   // space for each thread within the tile.
   ts_allocator tsa ;
   tsa.setDynamicGroupSegmentSize( REDUCE_WAVEFRONT_SIZE * sizeof(T) * output_length );
-
 
   int max_ComputeUnits = 32;
   int numTiles = max_ComputeUnits*32;			/* Max no. of WG for Tahiti(32 compute Units) and 32 is the tuning factor that gives good performance*/
@@ -127,9 +159,8 @@ void reduce_enqueue(
           // due to unresolved behavior (bug?) in the Kalmar compiler
           ValueInit::init(functor,scratch+tileIndex*output_length);
 
-          for ( ; gx < szElements ; gx += length ) {
-            functor(gx,accumulator);
-          }
+          reduce_enqueue_driver<Tag,FunctorType>
+            ( functor , accumulator , t_idx.global[0] , szElements , length );
 
           t_idx.barrier.wait();
 
