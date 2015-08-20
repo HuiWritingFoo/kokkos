@@ -144,8 +144,6 @@ void reduce_enqueue(
           shared_T * const scratch =
             (shared_T *) tsa.alloc(REDUCE_WAVEFRONT_SIZE*sizeof(T)*output_length);
 
-          int gx = t_idx.global[0];
-          int gloId = gx;
           //  Initialize local data store
           //  Index of this member in its work group.
           unsigned int tileIndex = t_idx.local[0];
@@ -155,9 +153,21 @@ void reduce_enqueue(
           reference_type accumulator =
             ValueInit::init(functor,scratch+tileIndex*output_length);
 
-          // Requires calling initialization a second time
+          //----------------------------------------
+          // Required to call initialization a second or even third time
           // due to unresolved behavior (bug?) in the Kalmar compiler
+          // where the first initialize doesn't take.
+          // Is this memory race condition?
+
+          // This triggers a compiler error:
+          // accumulator = 0 ;
+
           ValueInit::init(functor,scratch+tileIndex*output_length);
+
+          accumulator = 0 ;
+
+          // end redundant initialization workaround
+          //----------------------------------------
 
           reduce_enqueue_driver<Tag,FunctorType>
             ( functor , accumulator , t_idx.global[0] , szElements , length );
@@ -177,7 +187,7 @@ void reduce_enqueue(
 #endif
 
           //  Abort threads that are passed the end of the input vector
-          if (gloId >= szElements)
+          if ( t_idx.global[0] >= szElements)
           	return;
 
           //  Write only the single reduced value for the entire workgroup

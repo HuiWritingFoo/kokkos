@@ -175,12 +175,14 @@ void TestViewAggregateReduction()
   StaticArray<long,10> r10 ;
 
   Kokkos::parallel_reduce( count , DOT<long,Space>(a,b) , r );
-  Kokkos::parallel_reduce( count , DOT< StaticArray<long,4> , Space >(a4,b4) , r4 );
-  Kokkos::parallel_reduce( count , DOT< StaticArray<long,10> , Space >(a10,b10) , r10 );
-
   ASSERT_EQ( result , r );
-  for ( int i = 0 ; i < 10 ; ++i ) { ASSERT_EQ( result , r10.value[i] ); }
+
+  Kokkos::parallel_reduce( count , DOT< StaticArray<long,4> , Space >(a4,b4) , r4 );
   for ( int i = 0 ; i < 4 ; ++i ) { ASSERT_EQ( result , r4.value[i] ); }
+
+  Kokkos::parallel_reduce( count , DOT< StaticArray<long,10> , Space >(a10,b10) , r10 );
+  for ( int i = 0 ; i < 10 ; ++i ) { ASSERT_EQ( result , r10.value[i] ); }
+
 }
 
 }
