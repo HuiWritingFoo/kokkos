@@ -95,9 +95,14 @@ public:
     void* tmp = m_iter ;
     if (m_end < (m_iter += align (size))) {
       m_iter -= align (size); // put it back like it was
-#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_KALMAR_GPU )
-      printf ("ScratchMemorySpace<...>::get_shmem: Failed to allocate %ld byte(s); remaining capacity is %ld byte(s)\n", long(size), long(m_end-m_iter));
-#endif
+  #if defined(KOKKOS_HAVE_DEBUG) && !defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_KALMAR_GPU )
+      // mfh 23 Jun 2015: printf call consumes 25 registers
+      // in a CUDA build, so only print in debug mode.  The
+      // function still returns NULL if not enough memory.
+      printf ("ScratchMemorySpace<...>::get_shmem: Failed to allocate "
+              "%ld byte(s); remaining capacity is %ld byte(s)\n", long(size),
+              long(m_end-m_iter));
+  #endif // KOKKOS_HAVE_DEBUG
       tmp = 0;
     }
     return tmp;

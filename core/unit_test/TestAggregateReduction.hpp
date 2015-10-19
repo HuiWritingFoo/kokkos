@@ -155,6 +155,9 @@ struct FILL {
 template< class Space >
 void TestViewAggregateReduction()
 {
+
+#if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
   const int count = 2 ;
   const long result = count % 2 ? ( count * ( ( count + 1 ) / 2 ) )
                                 : ( ( count / 2 ) * ( count + 1 ) );
@@ -182,6 +185,9 @@ void TestViewAggregateReduction()
 
   Kokkos::parallel_reduce( count , DOT< StaticArray<long,10> , Space >(a10,b10) , r10 );
   for ( int i = 0 ; i < 10 ; ++i ) { ASSERT_EQ( result , r10.value[i] ); }
+  for ( int i = 0 ; i < 4 ; ++i ) { ASSERT_EQ( result , r4.value[i] ); }
+
+#endif
 
 }
 
