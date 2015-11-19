@@ -59,7 +59,8 @@ struct functor_type_range_for {
     }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (Kokkos::kalmar_team_member_type team) const
+//  void operator() (Kokkos::kalmar_team_member_type team) const
+  void operator() (Kokkos::Impl::KalmarTeamMember team) const
   {
     if(team.league_rank()<10)
     if(team.team_rank()<10)

@@ -89,7 +89,7 @@ public:
   typedef LayoutRight           array_layout ;
   typedef HostSpace::size_type  size_type ;
 
-  typedef ScratchMemorySpace< Serial > scratch_memory_space ;
+  typedef ScratchMemorySpace< Kalmar > scratch_memory_space ;
 
   //@}
   //------------------------------------

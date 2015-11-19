@@ -48,6 +48,11 @@
 #include <Kokkos_ExecPolicy.hpp>
 #include <impl/Kokkos_Shape.hpp>
 
+#ifdef __KALMAR_ACCELERATOR__
+#include <numeric>
+#include <functional>
+#endif
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -294,6 +299,22 @@ struct ViewRemap
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i0 ) const
   {
+#ifdef __KALMAR_ACCELERATOR__
+    static const auto depth = 8;
+    size_type ns[] = { n0, n1, n2, n3, n4, n5, n6, n7 };
+    size_type is[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    size_type total = std::accumulate(ns, ns + depth, 1, std::multiplies<size_type>());
+    for(size_type k=0;k<total;k++)
+    {
+      int i = 0;
+      while (is[i] + 1 >= ns[i]) i++;
+      is[i]++;
+      std::fill(is, is + i, 0);
+
+      output.at(is[0], is[1], is[2], is[3], is[4], is[5], is[6], is[7]) = input.at(is[0], is[1], is[2], is[3], is[4], is[5], is[6], is[7]);
+    }
+#else
+
     for ( size_type i1 = 0 ; i1 < n1 ; ++i1 ) {
     for ( size_type i2 = 0 ; i2 < n2 ; ++i2 ) {
     for ( size_type i3 = 0 ; i3 < n3 ; ++i3 ) {
@@ -303,6 +324,7 @@ struct ViewRemap
     for ( size_type i7 = 0 ; i7 < n7 ; ++i7 ) {
       output.at(i0,i1,i2,i3,i4,i5,i6,i7) = input.at(i0,i1,i2,i3,i4,i5,i6,i7);
     }}}}}}}
+#endif
   }
 };
 

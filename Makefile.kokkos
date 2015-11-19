@@ -9,9 +9,11 @@ KOKKOS_DEBUG ?= "no"
 #Options: hwloc,librt,experimental_memkind
 KOKKOS_USE_TPLS ?= ""
 #Options: c++11
-KOKKOS_CXX_STANDARD ?= "c++11"
+KOKKOS_CXX_STANDARD ?= "c++amp"
 #Options: aggressive_vectorization
 KOKKOS_OPTIONS ?= ""
+
+HCC_PATH ?= /opt/hcc
 
 #Default settings specific options
 #Options: force_uvm,use_ldg,rdc,enable_lambda
@@ -197,6 +199,7 @@ endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_KALMAR), 1)
         tmp := $(shell echo '\#define KOKKOS_HAVE_KALMAR 1' >> KokkosCore_config.tmp)
+        tmp := $(shell echo '\#define KOKKOS_HAVE_CXX11 1' >> KokkosCore_config.tmp)
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_QTHREAD), 1)
@@ -408,13 +411,11 @@ ifeq ($(KOKKOS_INTERNAL_USE_KALMAR), 1)
         KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/core/src/Kalmar/*.cpp)
         KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Kalmar/*.hpp)
         # use Kalmar debian package
-        KOKKOS_CXXFLAGS += -hc `/opt/kalmar/bin/clamp-config --cxxflags`
-        KOKKOS_LDFLAGS += -hc `/opt/kalmar/bin/clamp-config --ldflags`
+        KOKKOS_CXXFLAGS += -std=c++amp -stdlib=libc++ -I/opt/hcc/include -hc 
+        KOKKOS_LDFLAGS += -std=c++amp -stdlib=libc++ -L/opt/hcc/lib -Wl,--rpath=/opt/hcc/lib -lc++ -ldl -lpthread -Wl,--whole-archive -lmcwamp -Wl,--no-whole-archive -hc  -lm
         # use Kalmar built from source
-        #KOKKOS_CXXFLAGS += ` ~/cppamp35/build/build/Release/bin/clamp-config --build --cxxflags`
-        #KOKKOS_LDFLAGS += ` ~/cppamp35/build/build/Release/bin/clamp-config --build --ldflags`
         # disable lowering to OpenCL
-        KOKKOS_LDFLAGS += -Xlinker --disable-opencl
+#        KOKKOS_LDFLAGS += -Xlinker --disable-opencl
 endif
 
 #With Cygwin functions such as fdopen and fileno are not defined 

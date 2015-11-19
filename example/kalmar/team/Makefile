@@ -1,4 +1,4 @@
-KOKKOS_PATH = /home/crtrott/kokkos
+KOKKOS_PATH = /tmp/ctk/kokkos
 SRC = main.cpp
 
 default: build
@@ -13,16 +13,17 @@ EXE = $(SRC:.cpp=.cuda)
 KOKKOS_DEVICES = "Cuda,OpenMP"
 KOKKOS_ARCH = "SNB,Kepler35"
 else
-CXX = /opt/kalmar/bin/clang++
+KBASE=/opt/hcc
+CXX = $(KBASE)/bin/clang++
 CXXFLAGS = -O3
-LINK = /opt/kalmar/bin/clang++
-LINKFLAGS = -std=c++amp -Xclang -fhsa-ext -L/opt/kalmar/lib -Wl,--rpath=/opt/kalmar/lib -lc++ -lcxxrt -ldl -lpthread -Wl,--whole-archive -lmcwamp -Wl,--no-whole-archive  
+LINK = $(KBASE)/bin/clang++
+LINKFLAGS = -std=c++amp -Xclang -fhsa-ext -L$(KBASE)/lib -Wl,--rpath=$(KBASE)/lib -lc++ -ldl -lpthread -Wl,--whole-archive -lmcwamp -Wl,--no-whole-archive  
 EXE = $(SRC:.cpp=.host)
 KOKKOS_DEVICES = "Serial,Kalmar"
 KOKKOS_ARCH = 
 endif
 
-CXXFLAGS += -std=c++amp -Xclang -fhsa-ext -Xclang -fno-auto-auto -I/opt/kalmar/include -I/opt/kalmar/include/c++/v1 
+CXXFLAGS += -std=c++amp -Xclang -fhsa-ext -Xclang -fno-auto-auto -I$(KBASE)/include -I$(KBASE)/include/c++/v1 
 # CXXFLAGS += -std=c++amp -Xclang -fhsa-ext -I/opt/kalmar/include -I/opt/kalmar/include/c++/v1 
 LDFLAGS += 
 

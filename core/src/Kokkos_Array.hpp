@@ -195,7 +195,7 @@ public:
   KOKKOS_INLINE_FUNCTION pointer       data()       { return m_elem ; }
   KOKKOS_INLINE_FUNCTION const_pointer data() const { return m_elem ; }
 
-  ~Array() = default ;
+  KOKKOS_INLINE_FUNCTION ~Array() = default ;
   Array() = delete ;
   Array( const Array & rhs ) = delete ;
 
@@ -264,7 +264,7 @@ public:
   KOKKOS_INLINE_FUNCTION pointer       data()       { return m_elem ; }
   KOKKOS_INLINE_FUNCTION const_pointer data() const { return m_elem ; }
 
-  ~Array() = default ;
+  KOKKOS_INLINE_FUNCTION ~Array() = default ;
   Array()  = delete ;
   Array( const Array & ) = delete ;
 

@@ -1,20 +1,3 @@
-/***************************************************************************
-*   © 2012,2014 Advanced Micro Devices, Inc. All rights reserved.
-*
-*   Licensed under the Apache License, Version 2.0 (the "License");
-*   you may not use this file except in compliance with the License.
-*   You may obtain a copy of the License at
-*
-*       http://www.apache.org/licenses/LICENSE-2.0
-*
-*   Unless required by applicable law or agreed to in writing, software
-*   distributed under the License is distributed on an "AS IS" BASIS,
-*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*   See the License for the specific language governing permissions and
-*   limitations under the License.
-
-***************************************************************************/
-
 ///////////////////////////////////////////////////////////////////////////////
 // AMP REDUCE
 //////////////////////////////////////////////////////////////////////////////
@@ -22,217 +5,106 @@
 #if !defined( KOKKOS_KALMAR_AMP_REDUCE_INL )
 #define KOKKOS_KALMAR_AMP_REDUCE_INL
 
-
-// Issue: taking the address of a 'tile_static' variable
-// may not dereference properly ???
-#define REDUCE_WAVEFRONT_SIZE 256 //64
-#define _REDUCE_STEP(_LENGTH, _IDX, _W) \
-if ((_IDX < _W) && ((_IDX + _W) < _LENGTH)) {\
-      ValueJoin::join( functor , & scratch[_IDX] , & scratch[ _IDX + _W ] ); \
-}\
-    t_idx.barrier.wait();
-
 #include <iostream>
 
 #include <algorithm>
+#include <numeric>
+#include <cmath>
 #include <type_traits>
+#include <Kalmar/Kokkos_Kalmar_Tile.hpp>
+#include <Kalmar/Kokkos_Kalmar_Invoke.hpp>
+#include <Kalmar/Kokkos_Kalmar_Join.hpp>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace Kokkos {
 namespace Impl {
 
-template< typename Tag , class FunctorType >
-void reduce_enqueue_driver
-  ( const FunctorType & functor
-  , typename Kokkos::Impl::FunctorValueTraits< FunctorType , Tag >::reference_type accumulator
-  , const int gx_begin
-  , const int gx_end
-  , typename std::enable_if< std::is_same<Tag,void>::value
-                           , const int >::type gx_stride
-  )
-  restrict(amp)
+
+template<class T>
+T* reduce_value(T* x, std::true_type) restrict(amp)
 {
-  for ( int gx = gx_begin ; gx < gx_end ; gx += gx_stride ) {
-    functor(gx,accumulator);
-  }
+  return x;
 }
 
-template< typename Tag , class FunctorType >
-void reduce_enqueue_driver
-  ( const FunctorType & functor
-  , typename Kokkos::Impl::FunctorValueTraits< FunctorType , Tag >::reference_type accumulator
-  , const int gx_begin
-  , const int gx_end
-  , typename std::enable_if< ! std::is_same<Tag,void>::value
-                           , const int >::type gx_stride
-  )
-  restrict(amp)
+template<class T>
+T& reduce_value(T* x, std::false_type) restrict(amp)
 {
-  const Tag tag ;
-  for ( int gx = gx_begin ; gx < gx_end ; gx += gx_stride ) {
-    functor(tag,gx,accumulator);
-  }
+  return *x;
 }
 
-// This is the base implementation of reduction that is called by all of the convenience wrappers below.
-// first and last must be iterators from a DeviceVector
-template< class Tag , class FunctorType , typename T >
+template< class Tag, class F, class TransformIndex, class T >
 void reduce_enqueue(
-  const int           szElements ,
-  const FunctorType & functor ,
-  T * const output_result ,
-  int const output_length )
+  const int szElements,
+  const F & f,
+  TransformIndex transform_index,
+  T * const output_result,
+  int const output_length)
 {
   using namespace hc ;
 
-  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , Tag > ValueTraits ;
-  typedef Kokkos::Impl::FunctorValueInit< FunctorType , Tag >   ValueInit ;
-  typedef Kokkos::Impl::FunctorValueJoin< FunctorType , Tag >   ValueJoin ;
-  typedef Kokkos::Impl::FunctorFinal< FunctorType , Tag >       ValueFinal ;
+  typedef Kokkos::Impl::FunctorValueTraits< F , Tag > ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit< F , Tag >   ValueInit ;
+  typedef Kokkos::Impl::FunctorValueJoin< F , Tag >   ValueJoin ;
+  typedef Kokkos::Impl::FunctorFinal< F , Tag >       ValueFinal ;
 
   typedef typename ValueTraits::pointer_type   pointer_type ;
   typedef typename ValueTraits::reference_type reference_type ;
 
-  // Prepare to allocate 'sizeof(T) * output_length' reduction scratch
-  // space for each thread within the tile.
-  ts_allocator tsa ;
-  tsa.setDynamicGroupSegmentSize( REDUCE_WAVEFRONT_SIZE * sizeof(T) * output_length );
+  if (output_length < 1) return;
 
-  int max_ComputeUnits = 32;
-  int numTiles = max_ComputeUnits*32;			/* Max no. of WG for Tahiti(32 compute Units) and 32 is the tuning factor that gives good performance*/
-
-  int length = (REDUCE_WAVEFRONT_SIZE*numTiles);
-
-  length = szElements < length ? szElements : length;
-  unsigned int residual = length % REDUCE_WAVEFRONT_SIZE;
-  length = residual ? (length + REDUCE_WAVEFRONT_SIZE - residual): length ;
-
-  const int numTilesMax =( szElements + REDUCE_WAVEFRONT_SIZE - 1 ) / REDUCE_WAVEFRONT_SIZE ;
-
-  if ( numTilesMax < numTiles ) numTiles = numTilesMax ;
-
-  // For storing tiles' contributions:
-  T * const result = new T[numTiles * output_length ];
-
-  hc::extent< 1 > inputExtent(length);
-  hc::tiled_extent< 1 >
-    tiledExtentReduce = inputExtent.tile(REDUCE_WAVEFRONT_SIZE);
-
-  // AMP doesn't have APIs to get CU capacity. Launchable size is great though.
-#if 1
-  printf("reduce_enqueue T = \"%s\" szElements %d length %d output_length %d numTiles %d\n"
-        , typeid(T).name()
-        , szElements
-        , length
-        , output_length
-        , numTiles
-        );
-#endif
-  try
+  assert(output_result != nullptr);
+  const auto tile_size = get_tile_size<T>(output_length);
+  const std::size_t tile_len = std::ceil(1.0 * szElements / tile_size);
+  std::vector<T> result(tile_len*output_length);
+  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [&](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) restrict(amp) 
   {
-    hc::completion_future fut = hc::parallel_for_each
-      ( tiledExtentReduce
-      , tsa /* tile-static memory allocator */
-      , [ = , & functor , & tsa ]
-        ( hc::tiled_index<1> t_idx ) restrict(amp)
-        {
-          tsa.reset();
+      const auto local = t_idx.local[0];
+      const auto global = t_idx.global[0];
+      const auto tile = t_idx.tile[0];
 
-          typedef __attribute__((address_space(3))) T shared_T ;
-
-          shared_T * const scratch =
-            (shared_T *) tsa.alloc(REDUCE_WAVEFRONT_SIZE*sizeof(T)*output_length);
-
-          //  Initialize local data store
-          //  Index of this member in its work group.
-          unsigned int tileIndex = t_idx.local[0];
-
-          // This thread accumulates into designated
-          // portion of tile-static memory.
-          reference_type accumulator =
-            ValueInit::init(functor,scratch+tileIndex*output_length);
-
-          //----------------------------------------
-          // Required to call initialization a second or even third time
-          // due to unresolved behavior (bug?) in the Kalmar compiler
-          // where the first initialize doesn't take.
-          // Is this memory race condition?
-
-          // This triggers a compiler error:
-          // accumulator = 0 ;
-
-          ValueInit::init(functor,scratch+tileIndex*output_length);
-
-          accumulator = 0 ;
-
-          // end redundant initialization workaround
-          //----------------------------------------
-
-          reduce_enqueue_driver<Tag,FunctorType>
-            ( functor , accumulator , t_idx.global[0] , szElements , length );
-
-          t_idx.barrier.wait();
-
-          // Reduce within this tile:
-#if 1
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 128 * output_length );
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 64 * output_length );
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 32 * output_length );
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 16 * output_length );
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 8 * output_length );
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 4 * output_length );
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 2 * output_length );
-          _REDUCE_STEP(REDUCE_WAVEFRONT_SIZE * output_length , tileIndex * output_length , 1 * output_length );
-#endif
-
-          //  Abort threads that are passed the end of the input vector
-          if ( t_idx.global[0] >= szElements)
-          	return;
-
-          //  Write only the single reduced value for the entire workgroup
-          if (tileIndex == 0)
+      buffer.action_at(local, [&](T* state)
+      {
+          ValueInit::init(f, state);
+          if (global < szElements)
           {
-            const int beg = t_idx.tile[0] * output_length ;
-
-            for ( int i = 0 ; i < output_length ; ++i ) {
-              result[ beg + i ] = ((pointer_type)scratch)[i];
-            }
+              kalmar_invoke<Tag>(f, transform_index(t_idx, tile_size, tile_len), reduce_value(state, std::is_pointer<reference_type>()));
           }
+      });
+      t_idx.barrier.wait();
 
-       });
-       // End of hc::parallel_for_each
-       fut.wait();
+      // Reduce within a tile using multiple threads.
+      for(std::size_t s = 1; s < buffer.size(); s *= 2)
+      {
+          const std::size_t index = 2 * s * local;
+          if (index < buffer.size())
+          {
+              buffer.action_at(index, index + s, [&](T* x, T* y)
+              {
+                  ValueJoin::join(f, x, y);
+              });
+          }
+          t_idx.barrier.wait();
+      }
 
-       std::cout << "result[0] = {" ;
-       for ( int i = 0 ; i < output_length ; ++i ) {
-         std::cout << " " ;
-         std::cout << result[i] ;
-         output_result[i] = result[i];
-       }
-       std::cout << " }" << std::endl ;
-
-       for(int i = 1; i < numTiles; ++i)
-         {
-           std::cout << "join result[" << i << "] = {" ;
-           for ( int j = 0 ; j < output_length ; ++j ) {
-             std::cout << " " ;
-             std::cout << result[i*output_length+j] ;
-           }
-           std::cout << " }" << std::endl ;
-           ValueJoin::join( functor , output_result, result + i * output_length );
-         }
-
-       delete[] result ;
-
-       ValueFinal::final( functor , output_result );
-  }
-  catch(std::exception &e)
-  {
-    throw e ;
-  }
-
-
+      // Store the tile result in the global memory.
+      if (local == 0)
+      {
+          // Workaround for assigning from LDS memory: std::copy should work
+          // directly
+          buffer.action_at(0, [&](T* x)
+          {
+              // Workaround: copy_if used to avoid memmove
+              std::copy_if(x, x+output_length, result.data()+tile*output_length, std::bind([]{ return true; }));
+          });
+      }
+      
+  });
+  ValueInit::init(f, output_result);
+  fut.wait();
+  for(int i=0;i<tile_len;i++)
+    ValueJoin::join(f, output_result, result.data()+i*output_length);
+  ValueFinal::final( f , output_result );
 }
 
 }} //end of namespace Kokkos::Impl

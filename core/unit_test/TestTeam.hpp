@@ -505,8 +505,10 @@ struct TestLambdaSharedTeam {
 
       if ((shared_A.ptr_on_device () == NULL && SHARED_COUNT > 0) ||
           (shared_B.ptr_on_device () == NULL && SHARED_COUNT > 0)) {
+#ifndef __KALMAR_ACCELERATOR__
         printf ("Failed to allocate shared memory of size %lu\n",
                 static_cast<unsigned long> (SHARED_COUNT));
+#endif
         ++update; // failure to allocate is an error
       } else {
         for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {

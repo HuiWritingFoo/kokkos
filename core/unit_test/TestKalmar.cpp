@@ -139,10 +139,9 @@ TEST_F( kalmar , range_tag )
 {
   TestRange< Kokkos::Kalmar >::test_for(1000);
   TestRange< Kokkos::Kalmar >::test_reduce(1000);
-  // TestRange< Kokkos::Kalmar >::test_scan(1000);
+  TestRange< Kokkos::Kalmar >::test_scan(1000);
 }
 
-#if 0
 
 TEST_F( kalmar, long_reduce) {
   TestReduce< long ,   Kokkos::Kalmar >( 1000000 );
@@ -164,9 +163,7 @@ TEST_F( kalmar, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Kalmar >( 1000000 );
 }
 
-#endif
 
-#if 0
 
 TEST_F( kalmar , team_tag )
 {
@@ -185,7 +182,6 @@ TEST_F( kalmar, team_double_reduce) {
 TEST_F( kalmar, team_shared_request) {
   TestSharedTeam< Kokkos::Kalmar >();
 }
-#endif
 
 TEST_F( kalmar , atomics )
 {
@@ -225,7 +221,6 @@ TEST_F( kalmar , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Kalmar>(100,3) ) );
 #endif
 }
-
 TEST_F( kalmar , view_remap )
 {
   enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };
@@ -264,6 +259,7 @@ TEST_F( kalmar , view_remap )
   for ( size_t i0 = 0 ; i0 < N0 ; ++i0 ) {
     ++value ;
     ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
+
   }}}}
 }
 
@@ -278,7 +274,6 @@ TEST_F( kalmar , view_aggregate )
 
 //----------------------------------------------------------------------------
 
-#if 0
 
 TEST_F( kalmar , scan )
 {
@@ -287,15 +282,11 @@ TEST_F( kalmar , scan )
   TestScan< Kokkos::Kalmar >( 10000000 );
   Kokkos::Kalmar::fence();
 }
-
-
 TEST_F( kalmar , team_scan )
 {
   TestScanTeam< Kokkos::Kalmar >( 10000 );
   TestScanTeam< Kokkos::Kalmar >( 10000 );
 }
-
-#endif
 
 //----------------------------------------------------------------------------
 
@@ -320,7 +311,6 @@ TEST_F( kalmar , template_meta_functions )
 
 //----------------------------------------------------------------------------
 
-#if 0
 TEST_F( kalmar , cxx11 )
 {
   if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Kalmar >::value ) {
@@ -350,7 +340,6 @@ TEST_F( kalmar , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(9) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(10) ) );
 }
-#endif
 
 } // namespace test
 

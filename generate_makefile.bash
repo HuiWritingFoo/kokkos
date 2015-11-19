@@ -15,7 +15,8 @@ case $key in
     ;;    
     --with-kalmar)
     KOKKOS_DEVICES="${KOKKOS_DEVICES},Kalmar"
-    COMPILER=clang++
+    HCC_BASE="/opt/hcc"
+    COMPILER=${HCC_BASE}/bin/clang++
     ;;
     --with-cuda)
     KOKKOS_DEVICES="${KOKKOS_DEVICES},Cuda"

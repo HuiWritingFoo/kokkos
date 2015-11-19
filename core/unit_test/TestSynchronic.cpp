@@ -25,7 +25,6 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISE
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-
 //#undef _WIN32_WINNT
 //#define _WIN32_WINNT 0x0602
 
@@ -52,6 +51,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //#include <details/config>
 //#undef __SYNCHRONIC_COMPATIBLE
+#include "Kokkos_Macros.hpp"
+#ifndef KOKKOS_HAVE_KALMAR
 
 #include <impl/Kokkos_Synchronic.hpp>
 #include <impl/Kokkos_Synchronic_n3998.hpp>
@@ -445,4 +446,5 @@ TEST( synchronic, main )
 
 } // namespace Test
 
+#endif
 #endif
