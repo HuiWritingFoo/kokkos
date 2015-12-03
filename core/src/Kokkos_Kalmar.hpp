@@ -66,7 +66,7 @@
 
 #if defined( __KALMAR_ACCELERATOR__ )
 
-//using namespace ::Concurrency::precise_math ;
+using namespace ::Concurrency::precise_math ;
 
 #endif
 
