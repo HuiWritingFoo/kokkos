@@ -333,7 +333,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   void grow (MemberType& team_member, const size_t& growSize) const {
     if (growSize>max_segments_*segment_length_) {
+#ifndef __KALMAR_ACCELERATOR__
       printf ("Exceeding maxSize: %lu %lu\n", growSize, max_segments_*segment_length_);
+#endif
       return;
     }
 

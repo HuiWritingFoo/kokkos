@@ -271,7 +271,9 @@ struct UnorderedMapPrint
 
     uint32_t list = m_map.m_hash_lists(i);
     for (size_type curr = list, ii=0; curr != invalid_index; curr = m_map.m_next_index[curr], ++ii) {
+#ifndef __KALMAR_ACCELERATOR__
       printf("%d[%d]: %d->%d\n", list, ii, m_map.key_at(curr), m_map.value_at(curr));
+#endif
     }
   }
 };
