@@ -211,11 +211,11 @@ void test_bitset()
 
   for (int i=0, end = sizeof(test_sizes)/sizeof(unsigned); i<end; ++i) {
 
-    //std::cout << "Bitset " << test_sizes[i] << std::endl;
+    // std::cout << "Bitset " << test_sizes[i] << std::endl;
 
     bitset_type bitset(test_sizes[i]);
 
-    //std::cout << "  Check inital count " << std::endl;
+    // std::cout << "  Check inital count " << std::endl;
     // nothing should be set
     {
       Impl::TestBitsetTest< bitset_type > f(bitset);
@@ -224,7 +224,7 @@ void test_bitset()
       EXPECT_EQ(count, bitset.count());
     }
 
-    //std::cout << "  Check set() " << std::endl;
+    // std::cout << "  Check set() " << std::endl;
     bitset.set();
     // everything should be set
     {
@@ -234,11 +234,11 @@ void test_bitset()
       EXPECT_EQ(count, bitset.count());
     }
 
-    //std::cout << "  Check reset() " << std::endl;
+    // std::cout << "  Check reset() " << std::endl;
     bitset.reset();
     EXPECT_EQ(0u, bitset.count());
 
-    //std::cout << "  Check set(i) " << std::endl;
+    // std::cout << "  Check set(i) " << std::endl;
     // test setting bits
     {
       Impl::TestBitset< bitset_type, true > f(bitset);
@@ -247,7 +247,7 @@ void test_bitset()
       EXPECT_EQ( bitset.size(), count );
     }
 
-    //std::cout << "  Check reset(i) " << std::endl;
+    // std::cout << "  Check reset(i) " << std::endl;
     // test resetting bits
     {
       Impl::TestBitset< bitset_type, false > f(bitset);
@@ -257,7 +257,7 @@ void test_bitset()
     }
 
 
-    //std::cout << "  Check find_any_set(i) " << std::endl;
+    // std::cout << "  Check find_any_set(i) " << std::endl;
     // test setting any bits
     {
       Impl::TestBitsetAny< bitset_type, true > f(bitset);
@@ -266,7 +266,7 @@ void test_bitset()
       EXPECT_EQ( bitset.size(), count );
     }
 
-    //std::cout << "  Check find_any_unset(i) " << std::endl;
+    // std::cout << "  Check find_any_unset(i) " << std::endl;
     // test resetting any bits
     {
       Impl::TestBitsetAny< bitset_type, false > f(bitset);
