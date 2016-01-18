@@ -126,6 +126,12 @@ public:
   static void initialize( ) {}
 
   static int is_initialized() {return 1;}
+
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return amp_get_global_id(0); }
+  inline static unsigned max_hardware_threads() { return 64*40*8; }
+
 };
 
 } // namespace Kokkos
