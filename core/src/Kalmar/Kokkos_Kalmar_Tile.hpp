@@ -113,12 +113,12 @@ struct array_view
     T* x;
     std::size_t n;
 
-    array_view(T* x, std::size_t n) restrict(amp, cpu) 
-    : x(x), n(n)
+    array_view(T* xp, std::size_t np) restrict(amp, cpu) 
+    : x(xp), n(np)
     {}
 
-    array_view(T* x, T* y) restrict(amp, cpu) 
-    : x(x), n(y-x)
+    array_view(T* xp, T* yp) restrict(amp, cpu) 
+    : x(xp), n(yp-xp)
     {}
 
     T& operator[](std::size_t i) const restrict(amp, cpu)
@@ -265,12 +265,12 @@ struct tile_buffer
 
     using base::base;
 
-    tile_buffer(element_type* x, std::size_t n, std::size_t) restrict(amp, cpu) 
-    : base(x, n)
+    tile_buffer(element_type* xp, std::size_t np, std::size_t) restrict(amp, cpu) 
+    : base(xp, np)
     {}
 
-    tile_buffer(T* x, T* y, std::size_t) restrict(amp, cpu) 
-    : base(x, y)
+    tile_buffer(T* xp, T* yp, std::size_t) restrict(amp, cpu) 
+    : base(xp, yp)
     {}
 };
 
@@ -278,20 +278,20 @@ template<class T>
 struct tile_buffer<T[]>
 {
     typedef typename tile_type<T>::type element_type;
-    element_type* x;
+    element_type* element_data;
     std::size_t n, m;
 
-    tile_buffer(element_type* x, std::size_t n, std::size_t m) restrict(amp, cpu) 
-    : x(x), n(n), m(m)
+    tile_buffer(element_type* xp, std::size_t np, std::size_t mp) restrict(amp, cpu) 
+    : element_data(xp), n(np), m(mp)
     {}
 
-    tile_buffer(element_type* x, element_type* y, std::size_t m) restrict(amp, cpu) 
-    : x(x), n(y-x), m(m)
+    tile_buffer(element_type* xp, element_type* yp, std::size_t mp) restrict(amp, cpu) 
+    : element_data(xp), n(yp-xp), m(mp)
     {}
 
     element_type* operator[](std::size_t i) const restrict(amp, cpu)
     {
-        return x+i*m;
+        return element_data+i*m;
     }
 
     template<class Action, KOKKOS_KALMAR_REQUIRES(use_tile_memory<T>())>
@@ -337,7 +337,7 @@ struct tile_buffer<T[]>
 
     element_type* data() const restrict(amp, cpu)
     {
-        return x;
+        return element_data;
     }
 };
 

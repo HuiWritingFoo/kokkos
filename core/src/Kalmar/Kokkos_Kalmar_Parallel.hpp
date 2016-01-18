@@ -168,18 +168,18 @@ namespace Impl {
     KalmarTeamMember( const hc::tiled_index< 1 > & arg_idx, int league_size_,int team_size_ )
       : m_league_size( league_size_ )
       , m_team_size( team_size_ )
+      , m_space( nullptr, 0 )
       , m_vector_length( 1 )
       , idx( arg_idx )
-      , m_space( nullptr, 0 )
       {}
 
     KOKKOS_INLINE_FUNCTION
     KalmarTeamMember( const hc::tiled_index< 1 > & arg_idx, int league_size_,int team_size_, char * shmem, std::size_t shsize )
       : m_league_size( league_size_ )
       , m_team_size( team_size_ )
+      , m_space( shmem + arg_idx.tile[0] * shsize, shsize )
       , m_vector_length( 1 )
       , idx( arg_idx )
-      , m_space( shmem + arg_idx.tile[0] * shsize, shsize )
       {}
 
     // KOKKOS_INLINE_FUNCTION
@@ -219,7 +219,7 @@ namespace Impl {
 
       const auto local = idx.local[0];
       tile_static ValueType buffer[128];
-      const auto size = next_pow_2(m_team_size+1)/2;
+      const std::size_t size = next_pow_2(m_team_size+1)/2;
       lds_for(buffer[local], [&](ValueType& x)
       {
           x = value;

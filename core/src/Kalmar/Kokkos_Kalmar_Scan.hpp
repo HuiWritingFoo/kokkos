@@ -90,7 +90,7 @@ void scan_enqueue(
         });
         t_idx.barrier.wait();
         // Up sweep phase
-        for(int d=1;d<buffer.size();d*=2)
+        for(std::size_t d=1;d<buffer.size();d*=2)
         {
             auto d2 = 2*d;
             auto i = local*d2;
@@ -103,7 +103,7 @@ void scan_enqueue(
         result[tile] = buffer[buffer.size()-1];
         buffer[buffer.size()-1] = 0;
         // Down sweep phase
-        for(int d=buffer.size()/2;d>0;d/=2)
+        for(std::size_t d=buffer.size()/2;d>0;d/=2)
         {
             auto d2 = 2*d;
             auto i = local*d2;
@@ -124,7 +124,7 @@ void scan_enqueue(
 
     hc::parallel_for_each(hc::extent<1>(len).tile(tile_size), [&](hc::tiled_index<1> t_idx) restrict(amp) 
     {
-        const auto local = t_idx.local[0];
+        // const auto local = t_idx.local[0];
         const auto global = t_idx.global[0];
         const auto tile = t_idx.tile[0];
 

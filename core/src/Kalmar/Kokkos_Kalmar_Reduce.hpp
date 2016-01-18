@@ -145,7 +145,7 @@ void reduce_enqueue(
   });
   ValueInit::init(f, output_result);
   fut.wait();
-  for(int i=0;i<tile_len;i++)
+  for(std::size_t i=0;i<tile_len;i++)
     ValueJoin::join(f, output_result, result.data()+i*output_length);
   ValueFinal::final( f , output_result );
 }
