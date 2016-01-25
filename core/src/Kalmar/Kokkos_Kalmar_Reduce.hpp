@@ -133,6 +133,7 @@ void reduce_enqueue(
       // Store the tile result in the global memory.
       if (local == 0)
       {
+#if KOKKOS_KALMAR_HAS_WORKAROUNDS
           // Workaround for assigning from LDS memory: std::copy should work
           // directly
           buffer.action_at(0, [&](T* x)
@@ -140,6 +141,9 @@ void reduce_enqueue(
               // Workaround: copy_if used to avoid memmove
               std::copy_if(x, x+output_length, result.data()+tile*output_length, std::bind([]{ return true; }));
           });
+#else
+          std::copy(buffer, buffer+output_length, result.data()+tile*output_length);
+#endif
       }
       
   });

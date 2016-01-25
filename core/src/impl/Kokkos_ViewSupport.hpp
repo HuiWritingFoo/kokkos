@@ -47,8 +47,9 @@
 #include <algorithm>
 #include <Kokkos_ExecPolicy.hpp>
 #include <impl/Kokkos_Shape.hpp>
+#include <Kalmar/Kokkos_Kalmar_Config.hpp>
 
-#ifdef __KALMAR_ACCELERATOR__
+#if KOKKOS_KALMAR_HAS_WORKAROUNDS
 #include <numeric>
 #include <functional>
 #endif
@@ -299,7 +300,7 @@ struct ViewRemap
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i0 ) const
   {
-#ifdef __KALMAR_ACCELERATOR__
+#if KOKKOS_KALMAR_HAS_WORKAROUNDS
     static const auto depth = 8;
     size_type ns[] = { n0, n1, n2, n3, n4, n5, n6, n7 };
     size_type is[] = { 0, 0, 0, 0, 0, 0, 0, 0 };

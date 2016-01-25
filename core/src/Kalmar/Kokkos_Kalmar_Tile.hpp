@@ -45,6 +45,7 @@
 #include <type_traits>
 #include <vector>
 #include <memory>
+#include <Kalmar/Kokkos_Kalmar_Config.hpp>
 
 #if !defined( KOKKOS_KALMAR_TILE_H )
 #define KOKKOS_KALMAR_TILE_H
@@ -208,9 +209,13 @@ struct tile_type
 template<class T, class Body>
 void lds_for(__attribute__((address_space(3))) T& value, Body b) restrict(amp)
 {
+#if KOKKOS_KALMAR_HAS_WORKAROUNDS
     T state = value;
     b(state);
     value = state;
+#else
+    b(value);
+#endif
 }
 
 
@@ -232,9 +237,13 @@ struct single_action
     void action_at(std::size_t i, Action a) restrict(amp)
     {
         auto& value = static_cast<Derived&>(*this)[i];
+#if KOKKOS_KALMAR_HAS_WORKAROUNDS
         T state = value;
         a(state);
         value = state;
+#else
+        a(value);
+#endif
     }
 
     template<class Action, KOKKOS_KALMAR_REQUIRES(!use_tile_memory<T>())>
@@ -297,8 +306,9 @@ struct tile_buffer<T[]>
     template<class Action, KOKKOS_KALMAR_REQUIRES(use_tile_memory<T>())>
     void action_at(std::size_t i, Action a) restrict(amp)
     {
-        if (m > get_max_tile_array_size()) return;
         element_type* value = (*this)[i];
+#if KOKKOS_KALMAR_HAS_WORKAROUNDS
+        if (m > get_max_tile_array_size()) return;
         T state[get_max_tile_array_size()];
         // std::copy(value, value+m, state);
         // Workaround for assigning from LDS memory
@@ -310,6 +320,9 @@ struct tile_buffer<T[]>
         });
         a(state);
         std::copy(state, state+m, value);
+#else
+        a(value);
+#endif
     }
 
     template<class Action, KOKKOS_KALMAR_REQUIRES(!use_tile_memory<T>())>
@@ -390,12 +403,14 @@ hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, F 
         tile_buffer<U> tb(buffer_data + t_idx.tile[0]*tile_size*array_size, tile_size, array_size);
         f(t_idx, tb);
     });
+#if KOKKOS_KALMAR_HAS_WORKAROUNDS
     // Workaround: extra thread here will prevent memory corruption
     std::thread([buffer, fut]
     {
         fut.wait();
         (void)buffer->size();
     }).detach();
+#endif
 
     return fut;
 }
