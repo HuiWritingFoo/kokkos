@@ -113,7 +113,7 @@ struct Device;
 
 /// Define Kokkos::DefaultExecutionSpace as per configuration option
 /// or chosen from the enabled execution spaces in the following order:
-/// Kokkos::Cuda, Kokkos::OpenMP, Kokkos::Threads, Kokkos::Serial
+/// Kokkos::Cuda, Kokkos::Kalmar, Kokkos::OpenMP, Kokkos::Threads, Kokkos::Serial
 
 namespace Kokkos {
 
@@ -143,6 +143,8 @@ namespace Kokkos {
   typedef Threads DefaultHostExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_SERIAL )
   typedef Serial DefaultHostExecutionSpace ;
+#elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_KALMAR )
+  typedef Kalmar DefaultHostExecutionSpace ;
 #else
 #  error "At least one of the following execution spaces must be defined in order to use Kokkos: Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads."
 #endif
