@@ -59,7 +59,7 @@ struct VerifyExecutionCanAccessMemorySpace
   KOKKOS_INLINE_FUNCTION static void verify( void ) { }
   KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
 };
-
+#if !defined( KOKKOS_USE_KALMAR_UVM )
 template<>
 struct VerifyExecutionCanAccessMemorySpace
   < Kokkos::HostSpace
@@ -70,7 +70,7 @@ struct VerifyExecutionCanAccessMemorySpace
   inline static void verify( void ) { KalmarSpace::access_error(); }
   inline static void verify( const void * p ) { KalmarSpace::access_error(p); }
 };
-
+#endif
   struct KalmarTeamMember ;
 }
 
