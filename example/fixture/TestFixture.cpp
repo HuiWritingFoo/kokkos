@@ -47,7 +47,9 @@
 namespace Kokkos {
 namespace Example {
 
+#if !defined( KOKKOS_HAVE_KALMAR )
 template void test_fixture< Kokkos::HostSpace::execution_space >();
+#endif
 
 #if defined( KOKKOS_HAVE_CUDA )
 template void test_fixture<Kokkos::Cuda>();

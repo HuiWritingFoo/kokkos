@@ -282,14 +282,14 @@ int main()
   }
 
 //  test_elem();
-
+#if !defined ( KOKKOS_HAVE_KALMAR )
   {
     std::cout << "test_fixture< Host >" << std::endl ;
     Kokkos::HostSpace::execution_space::initialize( 1 );
     Kokkos::Example::test_fixture< Kokkos::HostSpace::execution_space >();
     Kokkos::HostSpace::execution_space::finalize();
   }
-
+#endif
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "test_fixture< Cuda >" << std::endl ;
