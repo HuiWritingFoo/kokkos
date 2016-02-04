@@ -174,7 +174,7 @@ unsigned long int atomic_fetch_add( volatile unsigned long int * const dest , co
 
 #endif
 
-#if 0
+#if 1
 template < typename T >
 KOKKOS_INLINE_FUNCTION
 T atomic_fetch_add( volatile T * const dest ,
