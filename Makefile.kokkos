@@ -1,7 +1,7 @@
 # Default settings common options
 
 #Options: OpenMP,Serial,Pthreads,Cuda,Kalmar,Qthreads
-KOKKOS_DEVICES ?= "OpenMP"
+KOKKOS_DEVICES ?= "Kalmar"
 #Options: EXPERIMENTAL-HSA,KNC,SNB,HSW,Kepler,Kepler30,Kepler32,Kepler35,Kepler37,Maxwell,Maxwell50,Maxwell52,Maxwell53,ARMv8,BGQ,Power7,Power8,KNL
 KOKKOS_ARCH ?= ""
 #Options: yes,no
@@ -411,8 +411,8 @@ ifeq ($(KOKKOS_INTERNAL_USE_KALMAR), 1)
         KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/core/src/Kalmar/*.cpp)
         KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Kalmar/*.hpp)
         # use Kalmar debian package
-        KOKKOS_CXXFLAGS += -std=c++amp -stdlib=libc++ -I/opt/hcc/include -hc 
-        KOKKOS_LDFLAGS += -std=c++amp -stdlib=libc++ -L/opt/hcc/lib -Wl,--rpath=/opt/hcc/lib -lc++ -ldl -lpthread -Wl,--whole-archive -lmcwamp -Wl,--no-whole-archive -hc  -lm
+        KOKKOS_CXXFLAGS += `$(HCC_PATH)/bin/hcc-config --install --cxxflags`
+        KOKKOS_LDFLAGS += `$(HCC_PATH)/bin/hcc-config --install --ldflags`
         # use Kalmar built from source
         # disable lowering to OpenCL
 #        KOKKOS_LDFLAGS += -Xlinker --disable-opencl

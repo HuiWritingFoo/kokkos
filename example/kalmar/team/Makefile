@@ -17,14 +17,13 @@ KBASE=/opt/hcc
 CXX = $(KBASE)/bin/clang++
 CXXFLAGS = -O3
 LINK = $(KBASE)/bin/clang++
-LINKFLAGS = -std=c++amp -Xclang -fhsa-ext -L$(KBASE)/lib -Wl,--rpath=$(KBASE)/lib -lc++ -ldl -lpthread -Wl,--whole-archive -lmcwamp -Wl,--no-whole-archive  
+LINKFLAGS = `$(KBASE)/bin/hcc-config --install --ldflags`
 EXE = $(SRC:.cpp=.host)
 KOKKOS_DEVICES = "Serial,Kalmar"
 KOKKOS_ARCH = 
 endif
 
-CXXFLAGS += -std=c++amp -Xclang -fhsa-ext -Xclang -fno-auto-auto -I$(KBASE)/include -I$(KBASE)/include/c++/v1 
-# CXXFLAGS += -std=c++amp -Xclang -fhsa-ext -I/opt/kalmar/include -I/opt/kalmar/include/c++/v1 
+CXXFLAGS += `$(KBASE)/bin/hcc-config --install --cxxflags`
 LDFLAGS += 
 
 DEPFLAGS = -M
