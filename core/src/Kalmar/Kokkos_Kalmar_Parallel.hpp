@@ -60,6 +60,17 @@ struct VerifyExecutionCanAccessMemorySpace
   KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
 };
 
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::HostSpace
+  , Kokkos::Kalmar::scratch_memory_space
+  >
+{
+  enum { value = false };
+  inline static void verify( void ) { KalmarSpace::access_error(); }
+  inline static void verify( const void * p ) { KalmarSpace::access_error(p); }
+};
+
   struct KalmarTeamMember ;
 }
 
