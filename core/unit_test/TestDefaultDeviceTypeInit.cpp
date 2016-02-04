@@ -48,7 +48,7 @@
 #include <omp.h>
 #endif
 
-#if !defined(KOKKOS_HAVE_CUDA) || defined(__CUDACC__)
+#if !defined(KOKKOS_HAVE_KALMAR) && (!defined(KOKKOS_HAVE_CUDA) || defined(__CUDACC__))
 //----------------------------------------------------------------------------
 
 namespace Test {

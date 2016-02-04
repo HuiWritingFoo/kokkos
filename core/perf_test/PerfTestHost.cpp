@@ -45,6 +45,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#if !defined( KOKKOS_HAVE_KALMAR )
+
 #if defined( KOKKOS_HAVE_OPENMP )
 
 typedef Kokkos::OpenMP TestHostDevice ;
@@ -100,5 +102,5 @@ TEST_F( host, gramschmidt ) {
 }
 
 } // namespace Test
-
+#endif
 
