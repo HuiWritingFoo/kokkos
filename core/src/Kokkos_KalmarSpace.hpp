@@ -107,8 +107,8 @@ public:
 
   /*--------------------------------*/
   /** \brief  Error reporting for HostSpace attempt to access KalmarSpace */
-  static void access_error();
-  static void access_error( const void * const );
+  static void access_error() __CPU__ __HC__;
+  static void access_error( const void * const ) __CPU__ __HC__;
 
 private:
 
