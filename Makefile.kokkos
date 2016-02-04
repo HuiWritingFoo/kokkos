@@ -357,7 +357,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_ARCH_MAXWELL53), 1)
 endif
 endif
  
-KOKKOS_INTERNAL_LS_CONFIG := $(shell ls KokkosCore_config.h)
+KOKKOS_INTERNAL_LS_CONFIG := $(shell ls KokkosCore_config.h 2>/dev/null)
 ifeq ($(KOKKOS_INTERNAL_LS_CONFIG), KokkosCore_config.h)
 KOKKOS_INTERNAL_NEW_CONFIG := $(strip $(shell diff KokkosCore_config.h KokkosCore_config.tmp | grep define | wc -l))
 else
