@@ -54,6 +54,7 @@
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
+#include <Kokkos_KalmarSpace.hpp>
 #include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
@@ -82,12 +83,17 @@ public:
 
   //! Tag this class as a kokkos execution space
   typedef Kalmar                execution_space ;
-  typedef HostSpace             memory_space ;
+  //! This execution space's preferred memory space.
+#if defined( KOKKOS_USE_KALMAR_UVM )
+  typedef HostSpace          memory_space ;
+#else
+  typedef KalmarSpace        memory_space ;
+#endif
   //! This execution space preferred device_type
   typedef Kokkos::Device<execution_space,memory_space> device_type;
 
   typedef LayoutRight           array_layout ;
-  typedef HostSpace::size_type  size_type ;
+  typedef memory_space::size_type size_type ;
 
   typedef ScratchMemorySpace< Kalmar > scratch_memory_space ;
 

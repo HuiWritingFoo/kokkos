@@ -58,6 +58,8 @@
  *  KOKKOS_HAVE_MPI                 negotiate MPI/execution space interactions
  *
  *  KOKKOS_USE_CUDA_UVM             Use CUDA UVM for Cuda memory space
+ *
+ *  KOKKOS_USE_KALMAR_UVM           Use Kalmar UVM for Kalmar memory space
  */
 
 #ifndef KOKKOS_DONT_INCLUDE_CORE_CONFIG_H

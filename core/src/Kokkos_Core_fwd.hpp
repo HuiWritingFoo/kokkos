@@ -100,6 +100,7 @@ class Cuda ;                 ///< Execution space for Cuda GPU
 #endif
 
 #if defined( KOKKOS_HAVE_KALMAR )
+class KalmarSpace ;
 class Kalmar ;
 #endif
 
