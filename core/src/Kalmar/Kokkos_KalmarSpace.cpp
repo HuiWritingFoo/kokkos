@@ -54,6 +54,7 @@
 #include <Kokkos_Kalmar.hpp>
 #include <Kokkos_KalmarSpace.hpp>
 
+#include <impl/Kokkos_BasicAllocators.hpp>
 #include <impl/Kokkos_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -62,42 +63,50 @@
 namespace Kokkos {
 namespace Impl {
 
-
-// pointers in KaliarSpace are on device, and retrieved by acceleracor_pointer
+// Pointers on KalmarSpace are device pointers retrieved by hc::array::accelerator_pointer()
 DeepCopy<KalmarSpace,KalmarSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  hc::array<char> avDst(n, static_cast<char*>(dst));
-  hc::array<char> avSrc(n, static_cast<const char*>(src));
-  hc::copy(avSrc, avDst);
+  hc::array<char> Dst(n, dst);
+  hc::array<char> Src(n, const_cast<void*>(src));
+  hc::copy(Src, Dst);
 }
 
 DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  hc::array<char> avSrc(n, static_cast<const char*>(src));
-  char* Dst = static_cast<char*>(dst);
-  hc::copy(avSrc, Dst);
+  char* Dst = static_cast<char*> (dst);
+  hc::array<char> Src(n, const_cast<void*> (src));
+  hc::copy(Src, Dst);
 }
 
 DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
-{ 
-  hc::array<char> avDst(n, static_cast<char*>(dst));
-  const char* Src = static_cast<const char*>(src);
-  hc::copy(Src, Src+n, avDst);
+{
+  hc::array<char> Dst(n, dst);
+  const char* Src = static_cast< const char* > (src);
+  hc::copy(Src, Dst);
 }
 
 DeepCopy<KalmarSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
+  hc::array<char> Dst(n, dst);
+  hc::array<char> Src(n, const_cast<void*>(src));
+  hc::copy(Src, Dst);
 }
 
 DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
+  char* Dst = static_cast<char*> (dst);
+  hc::array<char> Src(n, const_cast<void*> (src));
+  hc::copy(Src, Dst);
 }
 
 DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
+  hc::array<char> Dst(n, dst);
+  const char* Src = static_cast< const char* > (src);
+  hc::copy(Src, Dst);
 }
 
 void DeepCopyAsyncKalmar( void * dst , const void * src , size_t n) 
@@ -124,7 +133,7 @@ namespace {
 
 Impl::AllocationTracker KalmarSpace::allocate_and_track( const std::string & label, const size_t size )
 {
-  //return Impl::AllocationTracker( allocator(), size, label);
+  return Impl::AllocationTracker( allocator(), size, label);
 }
 
 #endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
@@ -160,15 +169,15 @@ KalmarSpace::KalmarSpace()
 
 void * KalmarSpace::allocate( const size_t arg_alloc_size ) const
 {
-  void * ptr = NULL;
-
-  return ptr ;
+  hc::array<char>* ptr = new hc::array<char>(arg_alloc_size);
+  return ptr->accelerator_pointer() ;
 }
 
 
 void KalmarSpace::deallocate( void * const arg_alloc_ptr , const size_t /* arg_alloc_size */ ) const
 {
   try {
+    // TODO: Release hc container
   } catch(...) {}
 }
 
