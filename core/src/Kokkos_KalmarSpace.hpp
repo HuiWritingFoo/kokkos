@@ -56,6 +56,7 @@
 
 #include <impl/Kokkos_AllocationTracker.hpp>
 
+#include <Kalmar/Kokkos_Kalmar_Allocators.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -81,6 +82,7 @@ public:
   /*--------------------------------*/
 #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
+  typedef Impl::KalmarAllocator allocator;
 
   /** \brief  Allocate a contiguous block of memory.
    *
