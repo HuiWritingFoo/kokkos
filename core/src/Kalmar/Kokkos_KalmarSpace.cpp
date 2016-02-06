@@ -138,18 +138,6 @@ Impl::AllocationTracker KalmarSpace::allocate_and_track( const std::string & lab
 
 #endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
 
-void KalmarSpace::access_error() __CPU__ __HC__
-{
-  //const std::string msg("Kokkos::KalmarSpace::access_error attempt to execute Kalmar function from non-Kalmar space" );
-  //Kokkos::Impl::throw_runtime_exception( msg );
-}
-
-void KalmarSpace::access_error( const void * const ) __CPU__ __HC__
-{
-  //const std::string msg("Kokkos::KalmarSpace::access_error attempt to execute Kalmar function from non-Kalmar space" );
-  //Kokkos::Impl::throw_runtime_exception( msg );
-}
-
 /*--------------------------------------------------------------------------*/
 
 

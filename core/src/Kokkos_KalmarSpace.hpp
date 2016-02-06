@@ -57,6 +57,7 @@
 #include <impl/Kokkos_AllocationTracker.hpp>
 
 #include <Kalmar/Kokkos_Kalmar_Allocators.hpp>
+#include <impl/Kokkos_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -109,14 +110,21 @@ public:
 
   /*--------------------------------*/
   /** \brief  Error reporting for HostSpace attempt to access KalmarSpace */
-  static void access_error() __CPU__ __HC__;
-  static void access_error( const void * const ) __CPU__ __HC__;
+  inline static void access_error() restrict(cpu) {
+    const std::string msg("Kokkos::KalmarSpace::access_error attempt to execute Kalmar function from non-Kalmar space" );
+    Kokkos::Impl::throw_runtime_exception( msg );
+  }
+  inline static void access_error() restrict(amp) { }
+  inline static void access_error( const void * const ) restrict(cpu) {
+    const std::string msg("Kokkos::KalmarSpace::access_error attempt to execute Kalmar function from non-Kalmar space" );
+    Kokkos::Impl::throw_runtime_exception( msg );
+  }
+  inline static void access_error( const void * const ) restrict(amp) { }
 
 private:
 
   int  m_device ; ///< Which Kalmar device
 
-  // friend class Kokkos::Experimental::Impl::SharedAllocationRecord< Kokkos::KalmarSpace , void > ;
 };
 
 } // namespace Kokkos
@@ -231,8 +239,8 @@ template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::KalmarSpace >
 {
   enum { value = false };
-  inline static void verify( void ) __CPU__ __HC__ { KalmarSpace::access_error(); }
-  inline static void verify( const void * p ) __CPU__ __HC__ { KalmarSpace::access_error(p); }
+  KOKKOS_INLINE_FUNCTION static void verify( void ) restrict(cpu, amp) { KalmarSpace::access_error(); }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * p ) restrict(cpu, amp) { KalmarSpace::access_error(p); }
 };
 } // namespace Impl
 } // namespace Kokkos
