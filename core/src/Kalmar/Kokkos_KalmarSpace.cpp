@@ -90,7 +90,7 @@ DeepCopy<KalmarSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , vo
   // TODO: multiple devices support in HCC
   hc::array<char> Dst(n, dst);
   hc::array<char> Src(n, const_cast<void*>(src));
-  hc::copy(Src, Dst);
+  hc::copy_async(Src, Dst).wait();
 }
 
 DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
@@ -98,7 +98,7 @@ DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void
   // TODO: multiple devices support in HCC
   char* Dst = static_cast<char*> (dst);
   hc::array<char> Src(n, const_cast<void*> (src));
-  hc::copy(Src, Dst);
+  hc::copy_async(Src, Dst).wait();
 }
 
 DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
@@ -106,7 +106,7 @@ DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( const Kalmar & instance , void
   // TODO: multiple devices support in HCC
   hc::array<char> Dst(n, dst);
   const char* Src = static_cast< const char* > (src);
-  hc::copy(Src, Dst);
+  hc::copy_async(Src, Dst).wait();
 }
 
 void DeepCopyAsyncKalmar( void * dst , const void * src , size_t n) 
