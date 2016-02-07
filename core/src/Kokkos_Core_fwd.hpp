@@ -165,8 +165,8 @@ namespace Impl {
 typedef Kokkos::CudaSpace  ActiveExecutionMemorySpace ;
 #elif defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
 typedef Kokkos::HostSpace  ActiveExecutionMemorySpace ;
-#elif defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_KALMAR_GPU )
-typedef Kokkos::HostSpace  ActiveExecutionMemorySpace ;
+#elif defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_KALMAR_GPU ) && defined (KOKKOS_HAVE_KALMAR)
+typedef Kokkos::KalmarSpace  ActiveExecutionMemorySpace ;
 #else
 typedef void ActiveExecutionMemorySpace ;
 #endif

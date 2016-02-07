@@ -54,6 +54,9 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 
+#if defined( KOKKOS_HAVE_KALMAR )
+#include <Kalmar/KokkosExp_Kalmar_View.hpp>
+#endif
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
