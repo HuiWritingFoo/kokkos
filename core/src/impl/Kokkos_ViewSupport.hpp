@@ -54,10 +54,6 @@
 #include <functional>
 #endif
 
-#if defined( KOKKOS_HAVE_KALMAR )
-#include "hc.hpp"
-#endif
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -353,7 +349,6 @@ struct ViewRemap< OutputView ,  InputView , 0 >
 template< class ExecSpace , class Type >
 struct ViewDefaultConstruct< ExecSpace , Type , true >
 {
-#if defined( KOKKOS_USE_KALMAR_UVM ) || !defined( KOKKOS_HAVE_KALMAR )
   Type * const m_ptr ;
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -367,22 +362,6 @@ struct ViewDefaultConstruct< ExecSpace , Type , true >
       parallel_for( range , *this );
       ExecSpace::fence();
     }
-#else
-  hc::array<Type>* m_ptr;
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  void operator()( const typename ExecSpace::size_type& i ) const
-    { (*m_ptr)[i] = Type(); }
-
-  ViewDefaultConstruct( Type * pointer , size_t capacity )
-    : m_ptr( new hc::array<Type>(capacity, pointer) )
-    {
-      Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
-      parallel_for( range , *this );
-      ExecSpace::fence();
-    }
-  ~ViewDefaultConstruct() { delete m_ptr; }
-#endif
 };
 
 template< class OutputView , unsigned Rank = OutputView::Rank ,
