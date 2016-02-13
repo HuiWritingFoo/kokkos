@@ -48,7 +48,7 @@
 /* only compile this file if Kalmar is enabled for Kokkos */
 #ifdef KOKKOS_HAVE_KALMAR
 
-#include "hc.hpp"
+#include "hc_am.hpp"
 #include <impl/Kokkos_Error.hpp>
 #include <Kalmar/Kokkos_Kalmar_Allocators.hpp>
 
@@ -60,15 +60,13 @@ namespace Kokkos { namespace Impl {
 
 void * KalmarAllocator::allocate( size_t size )
 {
-  hc::array<char>* ptr = new hc::array<char>(size);
-  assert( ptr && "array pointer is null");
-  return ptr->accelerator_pointer();
+  return hc::am_alloc( size, hc::accelerator(), 0 );
 }
 
 void KalmarAllocator::deallocate( void * ptr, size_t /*size*/ )
 {
   try {
-    // TODO: Release hc containter pointer
+    hc::am_free( ptr );
   } catch(...) {}
 }
 
@@ -78,9 +76,7 @@ void * KalmarAllocator::reallocate(void * old_ptr, size_t old_size, size_t new_s
   if (old_size != new_size) {
     ptr = allocate( new_size );
     size_t copy_size = old_size < new_size ? old_size : new_size;
-    hc::array<char> Old(old_size, old_ptr);
-    hc::array<char> Now(new_size, ptr);
-    hc::copy(Old, Now);
+    hc::am_copy(ptr, old_ptr, old_size);
     deallocate( old_ptr, old_size );
   }
   return ptr;

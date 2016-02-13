@@ -63,50 +63,37 @@
 namespace Kokkos {
 namespace Impl {
 
-// Pointers on KalmarSpace are device pointers retrieved by hc::array::accelerator_pointer()
 DeepCopy<KalmarSpace,KalmarSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  hc::array<char> Dst(n, dst);
-  hc::array<char> Src(n, const_cast<void*>(src));
-  hc::copy(Src, Dst);
+  hc::am_copy(dst, (void*)src, n);
 }
 
 DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  char* Dst = static_cast<char*> (dst);
-  hc::array<char> Src(n, const_cast<void*> (src));
-  hc::copy(Src, Dst);
+  hc::am_copy(dst, (void*)src, n);
 }
 
 DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  hc::array<char> Dst(n, dst);
-  const char* Src = static_cast< const char* > (src);
-  hc::copy(Src, Dst);
+  hc::am_copy(dst, (void*)src, n);
 }
 
 DeepCopy<KalmarSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
-  hc::array<char> Dst(n, dst);
-  hc::array<char> Src(n, const_cast<void*>(src));
-  hc::copy_async(Src, Dst).wait();
+  hc::am_copy(dst, (void*)src, n);
 }
 
 DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
-  char* Dst = static_cast<char*> (dst);
-  hc::array<char> Src(n, const_cast<void*> (src));
-  hc::copy_async(Src, Dst).wait();
+  hc::am_copy(dst, (void*)src, n);
 }
 
 DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
-  hc::array<char> Dst(n, dst);
-  const char* Src = static_cast< const char* > (src);
-  hc::copy_async(Src, Dst).wait();
+  hc::am_copy(dst, (void*)src, n);
 }
 
 void DeepCopyAsyncKalmar( void * dst , const void * src , size_t n) 
@@ -157,15 +144,14 @@ KalmarSpace::KalmarSpace()
 
 void * KalmarSpace::allocate( const size_t arg_alloc_size ) const
 {
-  hc::array<char>* ptr = new hc::array<char>(arg_alloc_size);
-  return ptr->accelerator_pointer() ;
+  return hc::am_alloc( arg_alloc_size, hc::accelerator(), 0 );
 }
 
 
 void KalmarSpace::deallocate( void * const arg_alloc_ptr , const size_t /* arg_alloc_size */ ) const
 {
   try {
-    // TODO: Release hc container
+    hc::am_free( (void*) arg_alloc_ptr );
   } catch(...) {}
 }
 

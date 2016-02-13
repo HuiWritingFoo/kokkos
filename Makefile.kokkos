@@ -412,7 +412,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_KALMAR), 1)
         KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Kalmar/*.hpp)
         # use Kalmar debian package
         KOKKOS_CXXFLAGS += `$(HCC_PATH)/bin/hcc-config --install --cxxflags`
-        KOKKOS_LDFLAGS += `$(HCC_PATH)/bin/hcc-config --install --ldflags`
+        KOKKOS_LDFLAGS += `$(HCC_PATH)/bin/hcc-config --install --ldflags` -lhc_am
         # use Kalmar built from source
         # disable lowering to OpenCL
 #        KOKKOS_LDFLAGS += -Xlinker --disable-opencl

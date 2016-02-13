@@ -46,6 +46,8 @@
 #include <Kalmar/Kokkos_Kalmar_Reduce.hpp>
 #include <Kalmar/Kokkos_Kalmar_Scan.hpp>
 
+#include "hc_am.hpp"
+
 namespace Kokkos {
 namespace Impl {
 
@@ -59,6 +61,7 @@ struct VerifyExecutionCanAccessMemorySpace
   KOKKOS_INLINE_FUNCTION static void verify( void ) { }
   KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
 };
+
 #if !defined( KOKKOS_USE_KALMAR_UVM )
 template<>
 struct VerifyExecutionCanAccessMemorySpace
@@ -71,6 +74,7 @@ struct VerifyExecutionCanAccessMemorySpace
   inline static void verify( const void * p ) { KalmarSpace::access_error(p); }
 };
 #endif
+
   struct KalmarTeamMember ;
 }
 
@@ -388,7 +392,7 @@ public:
       const auto offset = policy.begin();
       if(len == 0) return;
 
-      hc::parallel_for_each(hc::extent<1>(len) , [&](const hc::index<1> & idx) restrict(amp)
+      hc::parallel_for_each(hc::extent<1>(len) , [=](const hc::index<1> idx) [[hc]]
       {
         kalmar_invoke<typename Policy::work_tag>(f, idx[0] + offset);
       }).wait();
@@ -422,16 +426,17 @@ public:
 
       const auto shared_size = FunctorTeamShmemSize< F >::value( f , team_size );
 
-      std::vector<char> scratch(shared_size * total_size);
-
+      char* pScratch = (char*)hc::am_alloc(shared_size * total_size, hc::accelerator(), 0);
       hc::extent< 1 > flat_extent( total_size );
 
       hc::tiled_extent< 1 > team_extent = flat_extent.tile(team_size);
 
-      hc::parallel_for_each( team_extent , [&](hc::tiled_index<1> idx) restrict(amp)
+      hc::parallel_for_each( team_extent , [=](hc::tiled_index<1> idx) [[hc]]
       {
-        kalmar_invoke<typename Policy::work_tag>(f, typename Policy::member_type(idx, league_size, team_size, scratch.data(), shared_size));
+        kalmar_invoke<typename Policy::work_tag>(f, typename Policy::member_type(idx, league_size, team_size, pScratch, shared_size));
       }).wait();
+
+      hc::am_free( (void*)pScratch ) ;
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -462,7 +467,7 @@ public:
       typedef typename Policy::work_tag Tag;
       typedef Kokkos::Impl::FunctorValueTraits< FunctorType , Tag > ValueTraits;
       typedef typename ValueTraits::reference_type reference_type;
-if(policy.end()-policy.begin()==0) return;
+      if(policy.end()-policy.begin()==0) return;
       Kokkos::Impl::reduce_enqueue< Tag >
         ( policy.end() - policy.begin()
         , f
@@ -501,17 +506,15 @@ public:
 
       const int reduce_size = ValueTraits::value_size( f );
       const int shared_size = FunctorTeamShmemSize< FunctorType >::value( f , team_size );
-
-      std::vector<char> scratch(reduce_size * shared_size * total_size);
-       
+      char* pScratch = (char*)hc::am_alloc(reduce_size * shared_size * total_size, hc::accelerator(), 0);
       Kokkos::Impl::reduce_enqueue< typename Policy::work_tag >
       ( total_size 
-        , f
-        , [&](hc::tiled_index<1> idx, int n_teams, int n_leagues) { return typename Policy::member_type(idx, n_leagues, n_teams, scratch.data(), shared_size); }
+	, f
+	, [=](hc::tiled_index<1> idx, int n_teams, int n_leagues) { return typename Policy::member_type(idx, n_leagues, n_teams, pScratch, shared_size); }
         , result_view.ptr_on_device()
         , result_view.dimension_0()
      );
-
+     hc::am_free( (void*) pScratch );
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -571,7 +574,7 @@ public:
       
     if(len == 0) return;
 
-    scan_enqueue<Tag>(len, f, [&](hc::tiled_index<1> idx, int n_teams, int n_leagues) { return typename Policy::member_type(idx,n_leagues,n_teams); });
+    scan_enqueue<Tag>(len, f, [=](hc::tiled_index<1> idx, int n_teams, int n_leagues) { return typename Policy::member_type(idx,n_leagues,n_teams); });
   }
 
   KOKKOS_INLINE_FUNCTION
