@@ -158,7 +158,7 @@ clean: kokkos-clean
 
 # Compilation rules
 TestKalmar.o: TestKalmar.cpp
-	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(EXTRA_INC) -c $<
+	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $<
 
 %.o:%.cpp $(KOKKOS_CPP_DEPENDS) $(TEST_HEADERS)
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $<
