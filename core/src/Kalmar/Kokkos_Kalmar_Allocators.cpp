@@ -62,7 +62,8 @@ namespace Kokkos { namespace Impl {
 void * KalmarAllocator::allocate( size_t size )
 {
   void * ptr = hc::am_alloc( size, hc::accelerator(), 0 );
-  KALMAR_ASSERT( ptr );
+  // FIXME: size could be zero
+  KALMAR_ASSERT( (ptr && (size > 0)) || size == 0 );
   return ptr;
 }
 
