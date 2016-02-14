@@ -41,55 +41,44 @@
 //@HEADER
 */
 
-#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_KALMAR_ERROR_HPP
+#define KOKKOS_KALMAR_ERROR_HPP
 
-#if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+#include "hc_am.hpp"
+#include <Kokkos_Macros.hpp>
+#include <impl/Kokkos_Error.hpp>
+
+#include <iostream>
+#include <sstream>
+#include <string>
 
 /* only compile this file if Kalmar is enabled for Kokkos */
 #ifdef KOKKOS_HAVE_KALMAR
 
-#include "hc_am.hpp"
-#include <impl/Kokkos_Error.hpp>
-#include <Kalmar/Kokkos_Kalmar_Error.hpp>
-#include <Kalmar/Kokkos_Kalmar_Allocators.hpp>
-
-#include <sstream>
-
 namespace Kokkos { namespace Impl {
 
-/*--------------------------------------------------------------------------*/
-
-void * KalmarAllocator::allocate( size_t size )
-{
-  void * ptr = hc::am_alloc( size, hc::accelerator(), 0 );
-  KALMAR_ASSERT( ptr );
-  return ptr;
-}
-
-void KalmarAllocator::deallocate( void * ptr, size_t /*size*/ )
-{
-  try {
-    KALMAR_SAFE_CALL( hc::am_free( ptr ) );
-  } catch(...) {}
-}
-
-void * KalmarAllocator::reallocate(void * old_ptr, size_t old_size, size_t new_size)
-{
-  void * ptr = old_ptr;
-  if (old_size != new_size) {
-    ptr = allocate( new_size );
-    size_t copy_size = old_size < new_size ? old_size : new_size;
-    KALMAR_SAFE_CALL( hc::am_copy(ptr, old_ptr, old_size) );
-    deallocate( old_ptr, old_size );
+static void kalmar_internal_error_throw( am_status_t e , const char * name, const char * file = NULL, const int line = 0 ) {
+  std::ostringstream out ;
+  out << name << " error( " << "hc am error" << "): ";
+  if (file) {
+    out << " " << file << ":" << line;
   }
-  return ptr;
+  throw_runtime_exception( out.str() );
+
 }
 
-/*--------------------------------------------------------------------------*/
+inline void kalmar_internal_safe_call( am_status_t e , const char * name, const char * file = NULL, const int line = 0)
+{
+  if ( AM_SUCCESS != e ) { kalmar_internal_error_throw( e , name, file, line ); }
+}
+
+#define KALMAR_SAFE_CALL( call )  \
+	Kokkos::Impl::kalmar_internal_safe_call( call , #call, __FILE__, __LINE__ )
+
+#define KALMAR_ASSERT(exp)                                                   \
+        Kokkos::Impl::kalmar_internal_safe_call( (exp) ? AM_SUCCESS : AM_ERROR_MISC, #exp, __FILE__, __LINE__ );
 
 }} // namespace Kokkos::Impl
 
-#endif //KOKKOS_HAVE_CUDA
-
-#endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
-
+#endif //KOKKOS_HAVE_KALMAR
+#endif //KOKKOS_KALMAR_ERROR_HPP

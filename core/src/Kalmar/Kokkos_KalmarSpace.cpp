@@ -56,6 +56,7 @@
 
 #include <impl/Kokkos_BasicAllocators.hpp>
 #include <impl/Kokkos_Error.hpp>
+#include <Kalmar/Kokkos_Kalmar_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
@@ -65,40 +66,41 @@ namespace Impl {
 
 DeepCopy<KalmarSpace,KalmarSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  hc::am_copy(dst, (void*)src, n);
+  KALMAR_SAFE_CALL( hc::am_copy(dst, (void*)src, n) );
 }
 
 DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  hc::am_copy(dst, (void*)src, n);
+  KALMAR_SAFE_CALL(  hc::am_copy(dst, (void*)src, n) );
 }
 
 DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( void * dst , const void * src , size_t n )
 {
-  hc::am_copy(dst, (void*)src, n);
+  KALMAR_SAFE_CALL( hc::am_copy(dst, (void*)src, n) );
 }
 
 DeepCopy<KalmarSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
-  hc::am_copy(dst, (void*)src, n);
+  KALMAR_SAFE_CALL( hc::am_copy(dst, (void*)src, n /*,dst_acc*/) );
 }
 
 DeepCopy<HostSpace,KalmarSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
-  hc::am_copy(dst, (void*)src, n);
+  KALMAR_SAFE_CALL( hc::am_copy(dst, (void*)src, n /*,dst_acc*/) );
 }
 
 DeepCopy<KalmarSpace,HostSpace,Kalmar>::DeepCopy( const Kalmar & instance , void * dst , const void * src , size_t n )
 {
   // TODO: multiple devices support in HCC
-  hc::am_copy(dst, (void*)src, n);
+  KALMAR_SAFE_CALL( hc::am_copy(dst, (void*)src, n /*,dst_acc*/) );
 }
 
 void DeepCopyAsyncKalmar( void * dst , const void * src , size_t n) 
 {
-  //
+  // TODO: multiple devices support & async copy
+  KALMAR_SAFE_CALL( hc::am_copy(dst, (void*)src, n /*,dst_acc*/) );
 }
 } // namespace Impl
 } // namespace Kokkos
@@ -144,14 +146,16 @@ KalmarSpace::KalmarSpace()
 
 void * KalmarSpace::allocate( const size_t arg_alloc_size ) const
 {
-  return hc::am_alloc( arg_alloc_size, hc::accelerator(), 0 );
+  void * ptr = hc::am_alloc( arg_alloc_size, hc::accelerator(), 0 );
+  KALMAR_ASSERT( ptr );
+  return ptr;  
 }
 
 
 void KalmarSpace::deallocate( void * const arg_alloc_ptr , const size_t /* arg_alloc_size */ ) const
 {
   try {
-    hc::am_free( (void*) arg_alloc_ptr );
+    KALMAR_SAFE_CALL( hc::am_free( (void*) arg_alloc_ptr ) );
   } catch(...) {}
 }
 
