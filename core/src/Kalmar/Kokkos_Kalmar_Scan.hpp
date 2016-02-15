@@ -44,6 +44,9 @@
 #include <Kalmar/Kokkos_Kalmar_Invoke.hpp>
 #include <Kalmar/Kokkos_Kalmar_Join.hpp>
 
+#include "hc_am.hpp"
+#include <Kalmar/Kokkos_Kalmar_Error.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -64,10 +67,14 @@ void scan_enqueue(
 
     const auto tile_size = get_tile_size<value_type>();
     const std::size_t tile_len = std::ceil(1.0 * len / tile_size);
-    std::vector<value_type> result(tile_len);
-    std::vector<value_type> scratch(len);
+    std::vector<value_type> vecResult(tile_len);
+    value_type* result = (value_type*)hc::am_alloc( sizeof(value_type)*tile_len, hc::accelerator(), 0 );
+    KALMAR_ASSERT( result );
 
-    tile_for<value_type>(tile_len * tile_size, [&](hc::tiled_index<1> t_idx, tile_buffer<value_type> buffer) restrict(amp) 
+    value_type* scratch = (value_type*)hc::am_alloc( sizeof(value_type)*len, hc::accelerator(), 0 );
+    KALMAR_ASSERT( scratch );
+
+    tile_for<value_type>(tile_len * tile_size, [&, scratch, result](hc::tiled_index<1> t_idx, tile_buffer<value_type> buffer) [[hc]]
     {
         const auto local = t_idx.local[0];
         const auto global = t_idx.global[0];
@@ -119,10 +126,14 @@ void scan_enqueue(
 
     }).wait();
 
+    // Ugly codes
+    // TODO: need HC-based prefix sum
+    KALMAR_SAFE_CALL( hc::am_copy( (void*)vecResult.data(), (void*)result, vecResult.size() * sizeof(value_type) ) );
     // Compute prefix sum
-    std::partial_sum(result.begin(), result.end(), result.begin(), make_join_operator<ValueJoin>(f));
+    std::partial_sum(vecResult.begin(), vecResult.end(), vecResult.begin(), make_join_operator<ValueJoin>(f));
+    KALMAR_SAFE_CALL( hc::am_copy( (void*)result, (void*)vecResult.data(), vecResult.size() * sizeof(value_type) ) );
 
-    hc::parallel_for_each(hc::extent<1>(len).tile(tile_size), [&](hc::tiled_index<1> t_idx) restrict(amp) 
+    hc::parallel_for_each(hc::extent<1>(len).tile(tile_size), [&, scratch, result](hc::tiled_index<1> t_idx) [[hc]]
     {
         // const auto local = t_idx.local[0];
         const auto global = t_idx.global[0];
@@ -135,6 +146,9 @@ void scan_enqueue(
             kalmar_invoke<Tag>(f, transform_index(t_idx, tile_size, tile_len), final_state, true);
         }
     }).wait();
+
+    KALMAR_SAFE_CALL( hc::am_free( (void*)result ) );
+    KALMAR_SAFE_CALL( hc::am_free( (void*)scratch ) );
 }
 
 } // namespace Impl
