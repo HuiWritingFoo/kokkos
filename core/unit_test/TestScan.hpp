@@ -87,6 +87,12 @@ struct TestScan {
   TestScan( const WorkSpec & N )
     { parallel_scan( N , *this ); }
 
+  KOKKOS_INLINE_FUNCTION TestScan() {}
+
+  KOKKOS_INLINE_FUNCTION TestScan(const TestScan& rhs) {}
+
+  KOKKOS_INLINE_FUNCTION TestScan& operator = (const TestScan& rhs) { return *this; }
+
   static void test_range( const WorkSpec & begin , const WorkSpec & end )
     {
       for ( WorkSpec i = begin ; i < end ; ++i ) {

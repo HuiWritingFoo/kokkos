@@ -74,7 +74,7 @@ void scan_enqueue(
     value_type* scratch = (value_type*)hc::am_alloc( sizeof(value_type)*len, hc::accelerator(), 0 );
     KALMAR_ASSERT( scratch );
 
-    tile_for<value_type>(tile_len * tile_size, [&, scratch, result](hc::tiled_index<1> t_idx, tile_buffer<value_type> buffer) [[hc]]
+    tile_for<value_type>(tile_len * tile_size, [=](hc::tiled_index<1> t_idx, tile_buffer<value_type> buffer) [[hc]]
     {
         const auto local = t_idx.local[0];
         const auto global = t_idx.global[0];
@@ -133,7 +133,7 @@ void scan_enqueue(
     std::partial_sum(vecResult.begin(), vecResult.end(), vecResult.begin(), make_join_operator<ValueJoin>(f));
     KALMAR_SAFE_CALL( hc::am_copy( (void*)result, (void*)vecResult.data(), vecResult.size() * sizeof(value_type) ) );
 
-    hc::parallel_for_each(hc::extent<1>(len).tile(tile_size), [&, scratch, result](hc::tiled_index<1> t_idx) [[hc]]
+    hc::parallel_for_each(hc::extent<1>(len).tile(tile_size), [=](hc::tiled_index<1> t_idx) [[hc]]
     {
         // const auto local = t_idx.local[0];
         const auto global = t_idx.global[0];
