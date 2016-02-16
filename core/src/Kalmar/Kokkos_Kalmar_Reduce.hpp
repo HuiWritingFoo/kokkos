@@ -65,13 +65,13 @@ namespace Impl {
 
 
 template<class T>
-T* reduce_value(T* x, std::true_type) restrict(amp)
+T* reduce_value(T* x, std::true_type) [[hc]]
 {
   return x;
 }
 
 template<class T>
-T& reduce_value(T* x, std::false_type) restrict(amp)
+T& reduce_value(T* x, std::false_type) [[hc]]
 {
   return *x;
 }
@@ -100,7 +100,7 @@ void reduce_enqueue(
   const auto tile_size = get_tile_size<T>(output_length);
   const std::size_t tile_len = std::ceil(1.0 * szElements / tile_size);
   std::vector<T> result(tile_len*output_length);
-  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [&](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) restrict(amp) 
+  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [&](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
   {
       const auto local = t_idx.local[0];
       const auto global = t_idx.global[0];

@@ -70,22 +70,22 @@ struct use_tile_memory
 {};
 
 #if 1
-#define KOKKOS_KALMAR_TILE_RESTRIC_CPU restrict(cpu, amp)
+#define KOKKOS_KALMAR_TILE_RESTRICT __HC__ __CPU__
 #else
-#define KOKKOS_KALMAR_TILE_RESTRIC_CPU restrict(cpu)
+#define KOKKOS_KALMAR_TILE_RESTRICT __CPU__
 #endif
 
-inline std::size_t get_max_tile_size() KOKKOS_KALMAR_TILE_RESTRIC_CPU
+inline std::size_t get_max_tile_size() KOKKOS_KALMAR_TILE_RESTRICT
 {
     return hc::accelerator().get_max_tile_static_size() - 1024;
 }
 
-inline std::size_t get_max_tile_thread() KOKKOS_KALMAR_TILE_RESTRIC_CPU
+inline std::size_t get_max_tile_thread() KOKKOS_KALMAR_TILE_RESTRICT
 {
     return 256;
 }
 
-inline int next_pow_2(int x) restrict(cpu, amp)
+inline int next_pow_2(int x) KOKKOS_KALMAR_TILE_RESTRICT
 { 
     --x;
     x |= x >> 1;
@@ -97,7 +97,7 @@ inline int next_pow_2(int x) restrict(cpu, amp)
 }
 
 template<class T>
-inline std::size_t get_tile_size(std::size_t n = 1) KOKKOS_KALMAR_TILE_RESTRIC_CPU
+inline std::size_t get_tile_size(std::size_t n = 1) KOKKOS_KALMAR_TILE_RESTRICT
 {
     const auto size = sizeof(T) * n;
     const auto group_size = get_max_tile_size();
@@ -114,35 +114,35 @@ struct array_view
     T* x;
     std::size_t n;
 
-    array_view(T* xp, std::size_t np) restrict(amp, cpu) 
+    array_view(T* xp, std::size_t np) KOKKOS_KALMAR_TILE_RESTRICT
     : x(xp), n(np)
     {}
 
-    array_view(T* xp, T* yp) restrict(amp, cpu) 
+    array_view(T* xp, T* yp) KOKKOS_KALMAR_TILE_RESTRICT
     : x(xp), n(yp-xp)
     {}
 
-    T& operator[](std::size_t i) const restrict(amp, cpu)
+    T& operator[](std::size_t i) KOKKOS_KALMAR_TILE_RESTRICT
     {
         return x[i];
     }
 
-    std::size_t size() const restrict(amp, cpu)
+    std::size_t size() const KOKKOS_KALMAR_TILE_RESTRICT
     {
         return this->n;
     }
 
-    T* data() const restrict(amp, cpu)
+    T* data() const KOKKOS_KALMAR_TILE_RESTRICT
     {
         return x;
     }
 
-    T* begin() const restrict(amp, cpu)
+    T* begin() const KOKKOS_KALMAR_TILE_RESTRICT
     {
         return x;
     }
 
-    T* end() const restrict(amp, cpu)
+    T* end() const KOKKOS_KALMAR_TILE_RESTRICT
     {
         return x+this->size();
     }
@@ -166,13 +166,13 @@ struct kalmar_char<const __attribute__((address_space(3))) T>
 { using type = const __attribute__((address_space(3))) typename kalmar_char<T>::type; };
 
 template<class T, class Char=typename kalmar_char<T>::type>
-Char* kalmar_byte_cast(T& x) restrict(cpu, amp)
+Char* kalmar_byte_cast(T& x) KOKKOS_KALMAR_TILE_RESTRICT
 {
     return reinterpret_cast<Char*>(&x);
 }
 
 template<class T, class U>
-void kalmar_assign_impl(T& x, const U& y, std::true_type) restrict(cpu, amp)
+void kalmar_assign_impl(T& x, const U& y, std::true_type) KOKKOS_KALMAR_TILE_RESTRICT
 {
     auto * src = kalmar_byte_cast(y);
     auto * dest = kalmar_byte_cast(x);
@@ -180,14 +180,14 @@ void kalmar_assign_impl(T& x, const U& y, std::true_type) restrict(cpu, amp)
 }
 
 template<class T, class U>
-void kalmar_assign_impl(T& x, const U& y, std::false_type) restrict(cpu, amp)
+void kalmar_assign_impl(T& x, const U& y, std::false_type) KOKKOS_KALMAR_TILE_RESTRICT
 {
     x = y;
 }
 
 // Workaround for assigning in and out of LDS memory
 template<class T, class U>
-void kalmar_assign(T& x, const U& y) restrict(cpu, amp)
+void kalmar_assign(T& x, const U& y) KOKKOS_KALMAR_TILE_RESTRICT
 {
     kalmar_assign_impl(x, y, std::integral_constant<bool, (
         not std::is_assignable<T, U>() and
@@ -207,7 +207,7 @@ struct tile_type
 {};
 
 template<class T, class Body>
-void lds_for(__attribute__((address_space(3))) T& value, Body b) restrict(amp)
+void lds_for(__attribute__((address_space(3))) T& value, Body b) [[hc]]
 {
 #if KOKKOS_KALMAR_HAS_WORKAROUNDS
     T state = value;
@@ -220,7 +220,7 @@ void lds_for(__attribute__((address_space(3))) T& value, Body b) restrict(amp)
 
 
 template<class T, class Body>
-void lds_for(T& value, Body b) restrict(amp)
+void lds_for(T& value, Body b) [[hc]]
 {
     b(value);
 }
@@ -234,7 +234,7 @@ template<class Derived, class T>
 struct single_action
 {
     template<class Action, KOKKOS_KALMAR_REQUIRES(use_tile_memory<T>())>
-    void action_at(std::size_t i, Action a) restrict(amp)
+    void action_at(std::size_t i, Action a) [[hc]]
     {
         auto& value = static_cast<Derived&>(*this)[i];
 #if KOKKOS_KALMAR_HAS_WORKAROUNDS
@@ -247,13 +247,13 @@ struct single_action
     }
 
     template<class Action, KOKKOS_KALMAR_REQUIRES(!use_tile_memory<T>())>
-    void action_at(std::size_t i, Action a) restrict(amp)
+    void action_at(std::size_t i, Action a) [[hc]]
     {
         a(static_cast<Derived&>(*this)[i]);
     }
 
     template<class Action>
-    void action_at(std::size_t i, std::size_t j, Action a) restrict(amp)
+    void action_at(std::size_t i, std::size_t j, Action a) [[hc]]
     {
         static_cast<Derived&>(*this).action_at(i, [&](T& x)
         {
@@ -274,11 +274,11 @@ struct tile_buffer
 
     using base::base;
 
-    tile_buffer(element_type* xp, std::size_t np, std::size_t) restrict(amp, cpu) 
+    tile_buffer(element_type* xp, std::size_t np, std::size_t) KOKKOS_KALMAR_TILE_RESTRICT
     : base(xp, np)
     {}
 
-    tile_buffer(T* xp, T* yp, std::size_t) restrict(amp, cpu) 
+    tile_buffer(T* xp, T* yp, std::size_t) KOKKOS_KALMAR_TILE_RESTRICT
     : base(xp, yp)
     {}
 };
@@ -290,21 +290,21 @@ struct tile_buffer<T[]>
     element_type* element_data;
     std::size_t n, m;
 
-    tile_buffer(element_type* xp, std::size_t np, std::size_t mp) restrict(amp, cpu) 
+    tile_buffer(element_type* xp, std::size_t np, std::size_t mp) KOKKOS_KALMAR_TILE_RESTRICT
     : element_data(xp), n(np), m(mp)
     {}
 
-    tile_buffer(element_type* xp, element_type* yp, std::size_t mp) restrict(amp, cpu) 
+    tile_buffer(element_type* xp, element_type* yp, std::size_t mp) KOKKOS_KALMAR_TILE_RESTRICT
     : element_data(xp), n(yp-xp), m(mp)
     {}
 
-    element_type* operator[](std::size_t i) const restrict(amp, cpu)
+    element_type* operator[](std::size_t i) const KOKKOS_KALMAR_TILE_RESTRICT
     {
         return element_data+i*m;
     }
 
     template<class Action, KOKKOS_KALMAR_REQUIRES(use_tile_memory<T>())>
-    void action_at(std::size_t i, Action a) restrict(amp)
+    void action_at(std::size_t i, Action a) [[hc]]
     {
         element_type* value = (*this)[i];
 #if KOKKOS_KALMAR_HAS_WORKAROUNDS
@@ -326,13 +326,13 @@ struct tile_buffer<T[]>
     }
 
     template<class Action, KOKKOS_KALMAR_REQUIRES(!use_tile_memory<T>())>
-    void action_at(std::size_t i, Action a) restrict(amp)
+    void action_at(std::size_t i, Action a) [[hc]]
     {
         a((*this)[i]);
     }
 
     template<class Action>
-    void action_at(std::size_t i, std::size_t j, Action a) restrict(amp)
+    void action_at(std::size_t i, std::size_t j, Action a) [[hc]]
     {
         this->action_at(i, [&](T* x)
         {
@@ -343,12 +343,12 @@ struct tile_buffer<T[]>
         });
     }
 
-    std::size_t size() const restrict(amp, cpu)
+    std::size_t size() const KOKKOS_KALMAR_TILE_RESTRICT
     {
         return this->n;
     }
 
-    element_type* data() const restrict(amp, cpu)
+    element_type* data() const KOKKOS_KALMAR_TILE_RESTRICT
     {
         return element_data;
     }
@@ -358,14 +358,14 @@ struct tile_buffer<T[]>
 struct zero_init_f
 {
     template<class T>
-    void operator()(__attribute__((address_space(3))) T& x, std::size_t=1) const restrict(amp)
+    void operator()(__attribute__((address_space(3))) T& x, std::size_t=1) const [[hc]]
     {
         auto * start = reinterpret_cast<__attribute__((address_space(3))) char*>(&x);
         std::fill(start, start+sizeof(T), 0);
     }
 
     template<class T>
-    void operator()(__attribute__((address_space(3))) T* x, std::size_t size) const restrict(amp)
+    void operator()(__attribute__((address_space(3))) T* x, std::size_t size) const [[hc]]
     {
         std::for_each(x, x+size, *this);
     }
@@ -374,14 +374,14 @@ struct zero_init_f
 static constexpr zero_init_f zero_init = {};
 
 template<class U, class F, class T=typename std::remove_extent<U>::type, KOKKOS_KALMAR_REQUIRES(use_tile_memory<T>())>
-hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, F f) 
+hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, const F& f)
 {
     assert(array_size <= get_max_tile_array_size() && "Exceed max array size");
     const auto tile_size = get_tile_size<T>(array_size);
     assert(((size % tile_size) == 0) && "Tile size must be divisible by extent");
     auto grid = hc::extent<1>(size).tile(tile_size);
     grid.set_dynamic_group_segment_size(tile_size * sizeof(T) * array_size);
-    return parallel_for_each(grid, [=](hc::tiled_index<1> t_idx) restrict(amp) 
+    return parallel_for_each(grid, [=](hc::tiled_index<1> t_idx) [[hc]]
     {
         typedef __attribute__((address_space(3))) T group_t;
         group_t * buffer = (group_t *)hc::get_group_segment_addr(hc::get_static_group_segment_size());
@@ -392,13 +392,13 @@ hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, F 
 }
 
 template<class U, class F, class T=typename std::remove_extent<U>::type, KOKKOS_KALMAR_REQUIRES(!use_tile_memory<T>())>
-hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, F f) 
+hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, const F& f)
 {
     const auto tile_size = get_tile_size<T>(array_size);
     hc::extent<1> grid(size);
     auto buffer = std::make_shared<std::vector<T>>(size*array_size);
     auto * buffer_data = buffer->data();
-    auto fut = parallel_for_each(grid.tile(tile_size), [f, tile_size, array_size, buffer_data](hc::tiled_index<1> t_idx) restrict(amp) 
+    auto fut = parallel_for_each(grid.tile(tile_size), [f, tile_size, array_size, buffer_data](hc::tiled_index<1> t_idx) [[hc]]
     {
         tile_buffer<U> tb(buffer_data + t_idx.tile[0]*tile_size*array_size, tile_size, array_size);
         f(t_idx, tb);
@@ -416,14 +416,14 @@ hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, F 
 }
 
 template<class T, class F>
-hc::completion_future tile_for(std::size_t size, std::size_t array_size, F f)
+hc::completion_future tile_for(std::size_t size, std::size_t array_size, const F& f)
 {
     static_assert(std::rank<T>() > 0, "Array size only applies to array buffer");
     return tile_for_impl<T>(size, array_size, f);
 }
 
 template<class T, class F>
-hc::completion_future tile_for(std::size_t size, F f) 
+hc::completion_future tile_for(std::size_t size, const F& f)
 {
     return tile_for_impl<T>(size, 1, f);
 }
