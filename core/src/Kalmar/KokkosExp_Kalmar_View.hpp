@@ -59,6 +59,7 @@ struct ViewOperatorBoundsErrorAbort ;
 
 template<>
 struct ViewOperatorBoundsErrorAbort< Kokkos::KalmarSpace > {
+ KOKKOS_INLINE_FUNCTION
  static void apply( const size_t rank
                   , const size_t n0 , const size_t n1
                   , const size_t n2 , const size_t n3
@@ -79,7 +80,7 @@ struct ViewOperatorBoundsErrorAbort< Kokkos::KalmarSpace > {
                    , const size_t i0 , const size_t i1
                    , const size_t i2 , const size_t i3
                    , const size_t i4 , const size_t i5
-                   , const size_t i6 , const size_t i7 ) restrict(amp, cpu)
+                   , const size_t i6 , const size_t i7 )
     {
 #if !defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_KALMAR_GPU )
       char buffer[512];

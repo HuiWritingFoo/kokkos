@@ -72,7 +72,7 @@ struct use_tile_memory
 #if 1
 #define KOKKOS_KALMAR_TILE_RESTRICT __HC__ __CPU__
 #else
-#define KOKKOS_KALMAR_TILE_RESTRICT __CPU__
+#define KOKKOS_KALMAR_TILE_RESTRICT
 #endif
 
 inline std::size_t get_max_tile_size() KOKKOS_KALMAR_TILE_RESTRICT

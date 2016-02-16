@@ -104,8 +104,8 @@ public:
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
-  inline static bool in_parallel() restrict(cpu) { return false ; }
-  inline static bool in_parallel() restrict(amp) { return true ; }
+  inline static bool in_parallel() __CPU__ { return false ; }
+  inline static bool in_parallel() __HC__ { return true ; }
 
   /** \brief  Set the device in a "sleep" state. A noop for OpenMP.  */
   static bool sleep() {return true;}

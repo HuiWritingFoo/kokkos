@@ -154,10 +154,10 @@
 
 #if defined( KOKKOS_HAVE_KALMAR ) && defined( __KALMAR_CC__ )
 
-  #define KOKKOS_FORCEINLINE_FUNCTION  __attribute__((amp,cpu)) inline
-  #define KOKKOS_INLINE_FUNCTION       __attribute__((amp,cpu)) inline
-  #define KOKKOS_FUNCTION              __attribute__((amp,cpu))
-  #define KOKKOS_LAMBDA                [=] __attribute__((amp,cpu))
+  #define KOKKOS_FORCEINLINE_FUNCTION  __attribute__((hc,cpu)) inline
+  #define KOKKOS_INLINE_FUNCTION       __attribute__((hc,cpu)) inline
+  #define KOKKOS_FUNCTION              __attribute__((hc,cpu))
+  #define KOKKOS_LAMBDA                [=] __attribute__((hc,cpu))
 #endif
 
 #if defined( _OPENMP )

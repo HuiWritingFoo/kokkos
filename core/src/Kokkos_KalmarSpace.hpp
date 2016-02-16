@@ -110,16 +110,18 @@ public:
 
   /*--------------------------------*/
   /** \brief  Error reporting for HostSpace attempt to access KalmarSpace */
-  inline static void access_error() restrict(cpu) {
+  KOKKOS_INLINE_FUNCTION static void access_error() {
+#if !defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_KALMAR_GPU )
     const std::string msg("Kokkos::KalmarSpace::access_error attempt to execute Kalmar function from non-Kalmar space" );
     Kokkos::Impl::throw_runtime_exception( msg );
+#endif
   }
-  inline static void access_error() restrict(amp) { }
-  inline static void access_error( const void * const ) restrict(cpu) {
+  KOKKOS_INLINE_FUNCTION static void access_error( const void * const ) {
+#if !defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_KALMAR_GPU )
     const std::string msg("Kokkos::KalmarSpace::access_error attempt to execute Kalmar function from non-Kalmar space" );
     Kokkos::Impl::throw_runtime_exception( msg );
+#endif
   }
-  inline static void access_error( const void * const ) restrict(amp) { }
 
 private:
 
@@ -239,8 +241,8 @@ template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::KalmarSpace >
 {
   enum { value = false };
-  KOKKOS_INLINE_FUNCTION static void verify( void ) restrict(cpu, amp) { KalmarSpace::access_error(); }
-  KOKKOS_INLINE_FUNCTION static void verify( const void * p ) restrict(cpu, amp) { KalmarSpace::access_error(p); }
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { KalmarSpace::access_error(); }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * p ) { KalmarSpace::access_error(p); }
 };
 } // namespace Impl
 } // namespace Kokkos
