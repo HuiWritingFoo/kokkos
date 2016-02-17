@@ -119,10 +119,21 @@ struct DOT {
   Kokkos::View< value_type * , Space > a ;
   Kokkos::View< value_type * , Space > b ;
 
+  KOKKOS_INLINE_FUNCTION
   DOT( const Kokkos::View< value_type * , Space > arg_a
      , const Kokkos::View< value_type * , Space > arg_b
      )
     : a( arg_a ), b( arg_b ) {}
+
+  KOKKOS_INLINE_FUNCTION
+  DOT( const DOT & rhs ):a( rhs.a ), b( rhs.b ) {}
+
+  KOKKOS_INLINE_FUNCTION
+  DOT& operator = (const DOT& rhs) {
+    a = rhs.a;
+    b = rhs.b;
+    return *this;
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const int i , value_type & update ) const
@@ -139,10 +150,21 @@ struct FILL {
   Kokkos::View< value_type * , Space > a ;
   Kokkos::View< value_type * , Space > b ;
 
+  KOKKOS_INLINE_FUNCTION
   FILL( const Kokkos::View< value_type * , Space > & arg_a
       , const Kokkos::View< value_type * , Space > & arg_b
       )
     : a( arg_a ), b( arg_b ) {}
+
+  KOKKOS_INLINE_FUNCTION
+  FILL( const FILL & rhs ):a( rhs.a ), b( rhs.b ) {}
+
+  KOKKOS_INLINE_FUNCTION
+  FILL& operator = (const FILL& rhs) {
+    a = rhs.a;
+    b = rhs.b;
+    return *this;
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const int i ) const

@@ -178,11 +178,11 @@ TEST_F( kalmar, team_long_reduce) {
 TEST_F( kalmar, team_double_reduce) {
   TestReduceTeam< double ,   Kokkos::Kalmar >( 100000 );
 }
-#if 0
+
 TEST_F( kalmar, team_shared_request) {
   TestSharedTeam< Kokkos::Kalmar >();
 }
-#endif
+
 TEST_F( kalmar , atomics )
 {
   const int loop_count = 1e4 ;
@@ -325,7 +325,7 @@ TEST_F( kalmar , reduction_deduction )
 {
   TestCXX11::test_reduction_deduction< Kokkos::Kalmar >();
 }
-#if 0
+
 TEST_F( kalmar , team_vector )
 {
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(0) ) );
@@ -340,6 +340,6 @@ TEST_F( kalmar , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(9) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Kalmar >(10) ) );
 }
-#endif
+
 } // namespace test
 
