@@ -64,10 +64,19 @@ public:
 
   const size_type nwork ;
 
+  KOKKOS_INLINE_FUNCTION
   ReduceFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
 
+  KOKKOS_INLINE_FUNCTION
   ReduceFunctor( const ReduceFunctor & rhs )
     : nwork( rhs.nwork ) {}
+
+   KOKKOS_INLINE_FUNCTION
+   ReduceFunctor& operator = (const ReduceFunctor& rhs) {
+     nwork = rhs.nwork;
+     return *this;
+   }
+
 
 /*
   KOKKOS_INLINE_FUNCTION
@@ -103,9 +112,15 @@ public:
 
   typedef typename ReduceFunctor< long , DeviceType >::value_type value_type ;
 
+  KOKKOS_INLINE_FUNCTION
   ReduceFunctorFinal( const size_t n )
     : ReduceFunctor<long,DeviceType>(n)
     {}
+
+  KOKKOS_INLINE_FUNCTION
+  ReduceFunctorFinal& operator = (const ReduceFunctorFinal& rhs) {
+    return *this;
+  }
 
   KOKKOS_INLINE_FUNCTION
   void final( value_type & dst ) const
@@ -132,10 +147,23 @@ public:
 
   const size_type     nwork ;
 
+  KOKKOS_INLINE_FUNCTION
   RuntimeReduceFunctor( const size_type arg_nwork ,
                         const size_type arg_count )
     : value_count( arg_count )
     , nwork( arg_nwork ) {}
+
+  KOKKOS_INLINE_FUNCTION
+  RuntimeReduceFunctor( const RuntimeReduceFunctor & rhs )
+     :value_count( rhs.value_count ),  nwork( rhs.nwork ) {}
+ 
+   KOKKOS_INLINE_FUNCTION
+   RuntimeReduceFunctor& operator = (const RuntimeReduceFunctor& rhs) {
+     value_count = rhs.value_count;
+     nwork = rhs.nwork;
+     return *this;
+   }
+
 
 /*
   KOKKOS_INLINE_FUNCTION
@@ -171,7 +199,13 @@ public:
   typedef typename base_type::value_type value_type ;
   typedef long scalar_type ;
 
+  KOKKOS_INLINE_FUNCTION
   RuntimeReduceFunctorFinal( const size_t theNwork , const size_t count ) : base_type(theNwork,count) {}
+
+  KOKKOS_INLINE_FUNCTION
+  RuntimeReduceFunctorFinal& operator = (const RuntimeReduceFunctorFinal& rhs) {
+     return *this;
+  }
 
   KOKKOS_INLINE_FUNCTION
   void final( value_type dst ) const

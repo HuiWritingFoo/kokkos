@@ -106,7 +106,7 @@ void reduce_enqueue(
   T* result = (T*)hc::am_alloc( sizeof(T)*tile_len*output_length, hc::accelerator(), 0 );
   KALMAR_ASSERT( result );
 
-  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [&, result](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
+  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [=](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
   {
       const auto local = t_idx.local[0];
       const auto global = t_idx.global[0];
