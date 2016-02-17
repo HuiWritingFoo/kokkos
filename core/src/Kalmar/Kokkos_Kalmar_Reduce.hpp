@@ -58,6 +58,9 @@
 #include <Kalmar/Kokkos_Kalmar_Invoke.hpp>
 #include <Kalmar/Kokkos_Kalmar_Join.hpp>
 
+#include "hc_am.hpp"
+#include <Kalmar/Kokkos_Kalmar_Error.hpp>
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace Kokkos {
@@ -99,8 +102,11 @@ void reduce_enqueue(
   assert(output_result != nullptr);
   const auto tile_size = get_tile_size<T>(output_length);
   const std::size_t tile_len = std::ceil(1.0 * szElements / tile_size);
-  std::vector<T> result(tile_len*output_length);
-  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [&](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
+  std::vector<T> vecResult(tile_len*output_length);
+  T* result = (T*)hc::am_alloc( sizeof(T)*tile_len*output_length, hc::accelerator(), 0 );
+  KALMAR_ASSERT( result );
+
+  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [&, result](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
   {
       const auto local = t_idx.local[0];
       const auto global = t_idx.global[0];
@@ -139,18 +145,22 @@ void reduce_enqueue(
           buffer.action_at(0, [&](T* x)
           {
               // Workaround: copy_if used to avoid memmove
-              std::copy_if(x, x+output_length, result.data()+tile*output_length, std::bind([]{ return true; }));
+              std::copy_if(x, x+output_length, result+tile*output_length, std::bind([]{ return true; }));
           });
 #else
-          std::copy(buffer, buffer+output_length, result.data()+tile*output_length);
+          std::copy(buffer, buffer+output_length, result+tile*output_length);
 #endif
       }
       
   });
   ValueInit::init(f, output_result);
   fut.wait();
+
+  KALMAR_SAFE_CALL( hc::am_copy((void*)vecResult.data(), (void*)result, vecResult.size()*sizeof(T)) );
+  KALMAR_SAFE_CALL( hc::am_free((void*)result) );
+
   for(std::size_t i=0;i<tile_len;i++)
-    ValueJoin::join(f, output_result, result.data()+i*output_length);
+    ValueJoin::join(f, output_result, vecResult.data()+i*output_length);
   ValueFinal::final( f , output_result );
 }
 
