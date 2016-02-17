@@ -49,6 +49,9 @@
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Shape.hpp>
 
+#if defined( KOKKOS_HAVE_KALMAR )
+#include "hc_am.hpp"
+#endif
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -1035,7 +1038,18 @@ struct ViewOffset< ShapeType , LayoutStride
   typedef ShapeType     shape_type;
   typedef LayoutStride  array_layout ;
 
+#if defined( KOKKOS_HAVE_KALMAR ) && !defined( KOKKOS_USE_KALMAR_UVM )
+  size_type * S;
+  ViewOffset() {
+    S = new size_type[shape_type::rank + 1];
+  }
+  // TODO: memory leak. Fix later
+  ~ViewOffset() {
+    //delete[] S;
+  }
+#else
   size_type S[ shape_type::rank + 1 ];
+#endif
 
   template< class SType , class L >
   KOKKOS_INLINE_FUNCTION

@@ -96,11 +96,11 @@ TEST_F( kalmar, view_subview_auto_1d_left ) {
 }
 
 TEST_F( kalmar, view_subview_auto_1d_right ) {
-  //TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::Kalmar >();
+  TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::Kalmar >();
 }
 
 TEST_F( kalmar, view_subview_auto_1d_stride ) {
-  //TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::Kalmar >();
+  TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::Kalmar >();
 }
 
 TEST_F( kalmar, view_subview_assign_strided ) {
