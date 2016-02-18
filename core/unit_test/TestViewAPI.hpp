@@ -69,6 +69,7 @@ public:
 namespace Test {
 
 template< class T , class L , class D , class M , class S >
+KOKKOS_INLINE_FUNCTION
 size_t allocation_count( const Kokkos::View<T,L,D,M,S> & view )
 {
   const size_t card  = Kokkos::Impl::cardinality_count( view.shape() );
@@ -170,6 +171,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   long         left_alloc ;
   long         right_alloc ;
 
+  KOKKOS_INLINE_FUNCTION
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
@@ -180,6 +182,31 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
+  
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight( const TestViewOperator_LeftAndRight& rhs )
+    : lsh( rhs.lsh )
+    , rsh( rhs.rsh )
+    , left( rhs.left )
+    , right( rhs.right )
+    , left_stride( rhs.left_stride )
+    , right_stride( rhs.right_stride )
+    , left_alloc( rhs.left_alloc )
+    , right_alloc( rhs.right_alloc )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight& operator = (const TestViewOperator_LeftAndRight& rhs) {
+    lsh = rhs.lsh;
+    rsh = rhs.rsh;
+    left = rhs.left;
+    right = rhs.right;
+    left_stride = rhs.left_stride;
+    right_stride = rhs.right_stride;
+    left_alloc = rhs.left_alloc;
+    right_alloc = rhs.right_alloc;
+    return *this;
+  }
 
   static void testit()
   {
@@ -279,6 +306,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
   long         left_alloc ;
   long         right_alloc ;
 
+  KOKKOS_INLINE_FUNCTION
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
@@ -287,6 +315,27 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight( const TestViewOperator_LeftAndRight& rhs )
+    : lsh( rhs.lsh )
+    , rsh( rhs.rsh )
+    , left( rhs.left )
+    , right( rhs.right )
+    , left_alloc( rhs.left_alloc )
+    , right_alloc( rhs.right_alloc )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight& operator = (const TestViewOperator_LeftAndRight& rhs) {
+    lsh = rhs.lsh;
+    rsh = rhs.rsh;
+    left = rhs.left;
+    right = rhs.right;
+    left_alloc = rhs.left_alloc;
+    right_alloc = rhs.right_alloc;
+    return *this;
+  }
 
   static void testit()
   {
@@ -374,6 +423,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
   long         left_alloc ;
   long         right_alloc ;
 
+  KOKKOS_INLINE_FUNCTION
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
@@ -382,6 +432,27 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight( const TestViewOperator_LeftAndRight& rhs )
+    : lsh( rhs.lsh )
+    , rsh( rhs.rsh )
+    , left( rhs.left )
+    , right( rhs.right )
+    , left_alloc( rhs.left_alloc )
+    , right_alloc( rhs.right_alloc )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight& operator = (const TestViewOperator_LeftAndRight& rhs) {
+    lsh = rhs.lsh;
+    rsh = rhs.rsh;
+    left = rhs.left;
+    right = rhs.right;
+    left_alloc = rhs.left_alloc;
+    right_alloc = rhs.right_alloc;
+    return *this;
+  }
 
   static void testit()
   {
@@ -472,6 +543,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   long         left_alloc ;
   long         right_alloc ;
 
+  KOKKOS_INLINE_FUNCTION
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
@@ -482,6 +554,31 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight( const TestViewOperator_LeftAndRight& rhs )
+    : lsh( rhs.lsh )
+    , rsh( rhs.rsh )
+    , left( rhs.left )
+    , right( rhs.right )
+    , left_stride( rhs.left_stride )
+    , right_stride( rhs.right_stride )
+    , left_alloc( rhs.left_alloc )
+    , right_alloc( rhs.right_alloc )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight& operator = (const TestViewOperator_LeftAndRight& rhs) {
+    lsh = rhs.lsh;
+    rsh = rhs.rsh;
+    left = rhs.left;
+    right = rhs.right;
+    left_stride = rhs.left_stride;
+    right_stride = rhs.right_stride;
+    left_alloc = rhs.left_alloc;
+    right_alloc = rhs.right_alloc;
+    return *this;
+  }
 
   static void testit()
   {
@@ -571,6 +668,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
   long         left_alloc ;
   long         right_alloc ;
 
+  KOKKOS_INLINE_FUNCTION
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
@@ -579,6 +677,27 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight( const TestViewOperator_LeftAndRight& rhs )
+    : lsh( rhs.lsh )
+    , rsh( rhs.rsh )
+    , left( rhs.left )
+    , right( rhs.right )
+    , left_alloc( rhs.left_alloc )
+    , right_alloc( rhs.right_alloc )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight& operator = (const TestViewOperator_LeftAndRight& rhs) {
+    lsh = rhs.lsh;
+    rsh = rhs.rsh;
+    left = rhs.left;
+    right = rhs.right;
+    left_alloc = rhs.left_alloc;
+    right_alloc = rhs.right_alloc;
+    return *this;
+  }
 
   static void testit()
   {
@@ -665,6 +784,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   long         left_alloc ;
   long         right_alloc ;
 
+  KOKKOS_INLINE_FUNCTION
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
@@ -675,6 +795,31 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight( const TestViewOperator_LeftAndRight& rhs )
+    : lsh( rhs.lsh )
+    , rsh( rhs.rsh )
+    , left( rhs.left )
+    , right( rhs.right )
+    , left_stride( rhs.left_stride )
+    , right_stride( rhs.right_stride )
+    , left_alloc( rhs.left_alloc )
+    , right_alloc( rhs.right_alloc )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight& operator = (const TestViewOperator_LeftAndRight& rhs) {
+    lsh = rhs.lsh;
+    rsh = rhs.rsh;
+    left = rhs.left;
+    right = rhs.right;
+    left_stride = rhs.left_stride;
+    right_stride = rhs.right_stride;
+    left_alloc = rhs.left_alloc;
+    right_alloc = rhs.right_alloc;
+    return *this;
+  }
 
   static void testit()
   {
@@ -863,6 +1008,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   long         left_alloc ;
   long         right_alloc ;
 
+  KOKKOS_INLINE_FUNCTION
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
@@ -873,6 +1019,31 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
+  
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight( const TestViewOperator_LeftAndRight& rhs )
+    : lsh( rhs.lsh )
+    , rsh( rhs.rsh )
+    , left( rhs.left )
+    , right( rhs.right )
+    , left_stride( rhs.left_stride )
+    , right_stride( rhs.right_stride )
+    , left_alloc( rhs.left_alloc )
+    , right_alloc( rhs.right_alloc )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  TestViewOperator_LeftAndRight& operator = (const TestViewOperator_LeftAndRight& rhs) {
+    lsh = rhs.lsh;
+    rsh = rhs.rsh;
+    left = rhs.left;
+    right = rhs.right;
+    left_stride = rhs.left_stride;
+    right_stride = rhs.right_stride;
+    left_alloc = rhs.left_alloc;
+    right_alloc = rhs.right_alloc;
+    return *this;
+  }
 
   static void testit()
   {

@@ -47,6 +47,7 @@
 #include <Kalmar/Kokkos_Kalmar_Scan.hpp>
 
 #include "hc_am.hpp"
+#include <Kalmar/Kokkos_Kalmar_Error.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -427,6 +428,9 @@ public:
       const auto shared_size = FunctorTeamShmemSize< F >::value( f , team_size );
 
       char* pScratch = (char*)hc::am_alloc(shared_size * total_size, hc::accelerator(), 0);
+      if( shared_size * total_size)
+        KALMAR_ASSERT( pScratch );
+
       hc::extent< 1 > flat_extent( total_size );
 
       hc::tiled_extent< 1 > team_extent = flat_extent.tile(team_size);
@@ -436,7 +440,7 @@ public:
         kalmar_invoke<typename Policy::work_tag>(f, typename Policy::member_type(idx, league_size, team_size, pScratch, shared_size));
       }).wait();
 
-      hc::am_free( (void*)pScratch ) ;
+      KALMAR_SAFE_CALL( hc::am_free( (void*)pScratch ) );
     }
 
   KOKKOS_INLINE_FUNCTION
