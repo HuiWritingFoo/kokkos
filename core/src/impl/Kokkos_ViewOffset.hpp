@@ -57,6 +57,60 @@
 
 namespace Kokkos { namespace Impl {
 
+  typedef struct Scalar_Stride {
+    typedef size_t T;
+    typedef T&     Reference;
+    typedef const T& const_Reference;
+    typedef int    iType;
+    T m_N0;
+    T m_N1;
+    T m_N2;
+    T m_N3;
+    T m_N4;
+    T m_N5;
+    T m_N6;
+    T m_N7;
+    T m_N8;
+    T m_N9;
+    T m_N10;
+    T m_N11;
+    T m_N12;
+
+  KOKKOS_INLINE_FUNCTION
+  Reference operator[]( const iType & i )
+    {
+      if( i < 1 ) return m_N0;
+      if( i < 2 ) return m_N1;
+      if( i < 3 ) return m_N2;
+      if( i < 4 ) return m_N3;
+      if( i < 5 ) return m_N4;
+      if( i < 6 ) return m_N5;
+      if( i < 7 ) return m_N6;
+      if( i < 8 ) return m_N7;
+      if( i < 9 ) return m_N8;
+      if( i < 10 ) return m_N9;
+      if( i < 11 ) return m_N10;
+      return m_N0;
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  const_Reference operator[]( const iType & i ) const
+    {
+      if( i < 1 ) return m_N0;
+      if( i < 2 ) return m_N1;
+      if( i < 3 ) return m_N2;
+      if( i < 4 ) return m_N3;
+      if( i < 5 ) return m_N4;
+      if( i < 6 ) return m_N5;
+      if( i < 7 ) return m_N6;
+      if( i < 8 ) return m_N7;
+      if( i < 9 ) return m_N8;
+      if( i < 10 ) return m_N9;
+      if( i < 11 ) return m_N10;
+      return m_N0;
+    }
+  } Scalar_Stride;
+
 template < class ShapeType , class LayoutType , typename Enable = void >
 struct ViewOffset ;
 
@@ -169,6 +223,20 @@ struct ViewOffset< ShapeType , LayoutLeft
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
   void stride( iType * const s ) const
+    {
+      s[0] = 1 ;
+      if ( 0 < shape_type::rank ) { s[1] = shape_type::N0 ; }
+      if ( 1 < shape_type::rank ) { s[2] = s[1] * shape_type::N1 ; }
+      if ( 2 < shape_type::rank ) { s[3] = s[2] * shape_type::N2 ; }
+      if ( 3 < shape_type::rank ) { s[4] = s[3] * shape_type::N3 ; }
+      if ( 4 < shape_type::rank ) { s[5] = s[4] * shape_type::N4 ; }
+      if ( 5 < shape_type::rank ) { s[6] = s[5] * shape_type::N5 ; }
+      if ( 6 < shape_type::rank ) { s[7] = s[6] * shape_type::N6 ; }
+      if ( 7 < shape_type::rank ) { s[8] = s[7] * shape_type::N7 ; }
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void stride( Scalar_Stride& s ) const
     {
       s[0] = 1 ;
       if ( 0 < shape_type::rank ) { s[1] = shape_type::N0 ; }
@@ -430,6 +498,20 @@ struct ViewOffset< ShapeType , LayoutLeft
       if ( 7 < shape_type::rank ) { s[8] = s[7] * shape_type::N6 ; }
     }
 
+  KOKKOS_INLINE_FUNCTION
+  void stride( Scalar_Stride& s ) const
+    {
+      s[0] = 1 ;
+      if ( 0 < shape_type::rank ) { s[1] = S0 ; }
+      if ( 1 < shape_type::rank ) { s[2] = s[1] * shape_type::N1 ; }
+      if ( 2 < shape_type::rank ) { s[3] = s[2] * shape_type::N2 ; }
+      if ( 3 < shape_type::rank ) { s[4] = s[3] * shape_type::N3 ; }
+      if ( 4 < shape_type::rank ) { s[5] = s[4] * shape_type::N4 ; }
+      if ( 5 < shape_type::rank ) { s[6] = s[5] * shape_type::N5 ; }
+      if ( 6 < shape_type::rank ) { s[7] = s[6] * shape_type::N6 ; }
+      if ( 7 < shape_type::rank ) { s[8] = s[7] * shape_type::N6 ; }
+    }
+
   KOKKOS_INLINE_FUNCTION size_type stride_0() const { return 1 ; }
   KOKKOS_INLINE_FUNCTION size_type stride_1() const { return S0 ; }
   KOKKOS_INLINE_FUNCTION size_type stride_2() const { return S0 * shape_type::N1 ; }
@@ -651,6 +733,21 @@ struct ViewOffset< ShapeType , LayoutRight
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
   void stride( iType * const s ) const
+    {
+      size_type n = 1 ;
+      if ( 7 < shape_type::rank ) { s[7] = n ; n *= shape_type::N7 ; }
+      if ( 6 < shape_type::rank ) { s[6] = n ; n *= shape_type::N6 ; }
+      if ( 5 < shape_type::rank ) { s[5] = n ; n *= shape_type::N5 ; }
+      if ( 4 < shape_type::rank ) { s[4] = n ; n *= shape_type::N4 ; }
+      if ( 3 < shape_type::rank ) { s[3] = n ; n *= shape_type::N3 ; }
+      if ( 2 < shape_type::rank ) { s[2] = n ; n *= shape_type::N2 ; }
+      if ( 1 < shape_type::rank ) { s[1] = n ; n *= shape_type::N1 ; }
+      if ( 0 < shape_type::rank ) { s[0] = n ; }
+      s[shape_type::rank] = n * shape_type::N0 ;
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void stride( Scalar_Stride& s ) const
     {
       size_type n = 1 ;
       if ( 7 < shape_type::rank ) { s[7] = n ; n *= shape_type::N7 ; }
@@ -928,6 +1025,21 @@ struct ViewOffset< ShapeType , LayoutRight
     }
 
   KOKKOS_INLINE_FUNCTION
+  void stride( Scalar_Stride& s ) const
+    {
+      size_type n = 1 ;
+      if ( 7 < shape_type::rank ) { s[7] = n ; n *= shape_type::N7 ; }
+      if ( 6 < shape_type::rank ) { s[6] = n ; n *= shape_type::N6 ; }
+      if ( 5 < shape_type::rank ) { s[5] = n ; n *= shape_type::N5 ; }
+      if ( 4 < shape_type::rank ) { s[4] = n ; n *= shape_type::N4 ; }
+      if ( 3 < shape_type::rank ) { s[3] = n ; n *= shape_type::N3 ; }
+      if ( 2 < shape_type::rank ) { s[2] = n ; n *= shape_type::N2 ; }
+      if ( 1 < shape_type::rank ) { s[1] = n ; n *= shape_type::N1 ; }
+      if ( 0 < shape_type::rank ) { s[0] = SR ; }
+      s[shape_type::rank] = SR * shape_type::N0 ;
+    }
+
+  KOKKOS_INLINE_FUNCTION
   size_type stride_7() const { return 1 ; }
 
   KOKKOS_INLINE_FUNCTION
@@ -1039,14 +1151,7 @@ struct ViewOffset< ShapeType , LayoutStride
   typedef LayoutStride  array_layout ;
 
 #if defined( KOKKOS_HAVE_KALMAR ) && !defined( KOKKOS_USE_KALMAR_UVM )
-  size_type * S;
-  ViewOffset() {
-    S = new size_type[shape_type::rank + 1];
-  }
-  // TODO: memory leak. Fix later
-  ~ViewOffset() {
-    //delete[] S;
-  }
+  Scalar_Stride S;
 #else
   size_type S[ shape_type::rank + 1 ];
 #endif
@@ -1190,6 +1295,10 @@ struct ViewOffset< ShapeType , LayoutStride
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
   void stride( iType * const s ) const
+    { for ( int i = 0 ; i <= shape_type::rank ; ++i ) { s[i] = S[i] ; } }
+
+  KOKKOS_INLINE_FUNCTION
+  void stride( Scalar_Stride& s ) const
     { for ( int i = 0 ; i <= shape_type::rank ; ++i ) { s[i] = S[i] ; } }
 
   KOKKOS_INLINE_FUNCTION
