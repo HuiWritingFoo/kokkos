@@ -1150,7 +1150,7 @@ struct ViewOffset< ShapeType , LayoutStride
   typedef ShapeType     shape_type;
   typedef LayoutStride  array_layout ;
 
-#if defined( KOKKOS_HAVE_KALMAR ) && !defined( KOKKOS_USE_KALMAR_UVM )
+#if defined( KOKKOS_HAVE_KALMAR )
   Scalar_Stride S;
 #else
   size_type S[ shape_type::rank + 1 ];
