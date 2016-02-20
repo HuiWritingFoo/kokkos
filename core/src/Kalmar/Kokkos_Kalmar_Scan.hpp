@@ -69,10 +69,12 @@ void scan_enqueue(
     const std::size_t tile_len = std::ceil(1.0 * len / tile_size);
     std::vector<value_type> vecResult(tile_len);
     value_type* result = (value_type*)hc::am_alloc( sizeof(value_type)*tile_len, hc::accelerator(), 0 );
-    KALMAR_ASSERT( result );
+    if( tile_len )
+      KALMAR_ASSERT( result );
 
     value_type* scratch = (value_type*)hc::am_alloc( sizeof(value_type)*len, hc::accelerator(), 0 );
-    KALMAR_ASSERT( scratch );
+    if( len )
+      KALMAR_ASSERT( scratch );
 
     tile_for<value_type>(tile_len * tile_size, [=](hc::tiled_index<1> t_idx, tile_buffer<value_type> buffer) [[hc]]
     {

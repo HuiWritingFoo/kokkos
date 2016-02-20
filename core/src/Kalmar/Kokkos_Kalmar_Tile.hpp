@@ -47,6 +47,9 @@
 #include <memory>
 #include <Kalmar/Kokkos_Kalmar_Config.hpp>
 
+#include "hc_am.hpp"
+#include <Kalmar/Kokkos_Kalmar_Error.hpp>
+
 #if !defined( KOKKOS_KALMAR_TILE_H )
 #define KOKKOS_KALMAR_TILE_H
 
@@ -396,8 +399,10 @@ hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, co
 {
     const auto tile_size = get_tile_size<T>(array_size);
     hc::extent<1> grid(size);
-    auto buffer = std::make_shared<std::vector<T>>(size*array_size);
-    auto * buffer_data = buffer->data();
+    T * buffer_data = (T*)hc::am_alloc(size*array_size*sizeof(T), hc::accelerator(), 0);
+    if( size*array_size )
+      KALMAR_ASSERT( buffer_data );
+
     auto fut = parallel_for_each(grid.tile(tile_size), [f, tile_size, array_size, buffer_data](hc::tiled_index<1> t_idx) [[hc]]
     {
         tile_buffer<U> tb(buffer_data + t_idx.tile[0]*tile_size*array_size, tile_size, array_size);
@@ -405,10 +410,10 @@ hc::completion_future tile_for_impl(std::size_t size, std::size_t array_size, co
     });
 #if KOKKOS_KALMAR_HAS_WORKAROUNDS
     // Workaround: extra thread here will prevent memory corruption
-    std::thread([buffer, fut]
+    std::thread([buffer_data, fut]
     {
         fut.wait();
-        (void)buffer->size();
+        KALMAR_SAFE_CALL( hc::am_free( (void*)buffer_data ) );
     }).detach();
 #endif
 

@@ -104,7 +104,8 @@ void reduce_enqueue(
   const std::size_t tile_len = std::ceil(1.0 * szElements / tile_size);
   std::vector<T> vecResult(tile_len*output_length);
   T* result = (T*)hc::am_alloc( sizeof(T)*tile_len*output_length, hc::accelerator(), 0 );
-  KALMAR_ASSERT( result );
+  if( tile_len*output_length )
+    KALMAR_ASSERT( result );
 
   auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [=](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
   {
