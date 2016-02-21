@@ -59,7 +59,7 @@
  *
  *  KOKKOS_USE_CUDA_UVM             Use CUDA UVM for Cuda memory space
  *
- *  KOKKOS_USE_KALMAR_UVM           Use Kalmar UVM for Kalmar memory space
+ *  KOKKOS_USE_KALMAR_SVM           Kalmar on Kaveri machine with SVM
  */
 
 #ifndef KOKKOS_DONT_INCLUDE_CORE_CONFIG_H

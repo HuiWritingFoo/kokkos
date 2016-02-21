@@ -86,7 +86,7 @@ public:
   //! Tag this class as a kokkos execution space
   typedef Kalmar                execution_space ;
   //! This execution space's preferred memory space.
-#if defined( KOKKOS_USE_KALMAR_UVM )
+#if defined( KOKKOS_USE_KALMAR_SVM )
   typedef HostSpace          memory_space ;
 #else
   typedef KalmarSpace        memory_space ;
