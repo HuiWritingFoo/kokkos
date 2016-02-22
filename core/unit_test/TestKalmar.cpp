@@ -150,7 +150,7 @@ TEST_F( kalmar, long_reduce) {
 TEST_F( kalmar, double_reduce) {
   TestReduce< double ,   Kokkos::Kalmar >( 1000000 );
 }
-
+#if defined( KOKKOS_USE_KALMAR_SVM )
 TEST_F( kalmar, long_reduce_dynamic ) {
   TestReduceDynamic< long ,   Kokkos::Kalmar >( 1000000 );
 }
@@ -162,7 +162,7 @@ TEST_F( kalmar, double_reduce_dynamic ) {
 TEST_F( kalmar, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Kalmar >( 1000000 );
 }
-
+#endif
 
 
 TEST_F( kalmar , team_tag )
@@ -221,6 +221,7 @@ TEST_F( kalmar , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Kalmar>(100,3) ) );
 #endif
 }
+#if defined( KOKKOS_USE_KALMAR_SVM )
 TEST_F( kalmar , view_remap )
 {
   enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };
@@ -262,7 +263,7 @@ TEST_F( kalmar , view_remap )
 
   }}}}
 }
-
+#endif
 //----------------------------------------------------------------------------
 
 

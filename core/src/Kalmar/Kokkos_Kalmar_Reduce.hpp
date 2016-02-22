@@ -66,13 +66,13 @@
 namespace Kokkos {
 namespace Impl {
 
-
+#if defined( KOKKOS_USE_KALMAR_SVM )
 template<class T>
 T* reduce_value(T* x, std::true_type) [[hc]]
 {
   return x;
 }
-
+#endif
 template<class T>
 T& reduce_value(T* x, std::false_type) [[hc]]
 {
@@ -106,8 +106,11 @@ void reduce_enqueue(
   T* result = (T*)hc::am_alloc( sizeof(T)*tile_len*output_length, hc::accelerator(), 0 );
   if( tile_len*output_length )
     KALMAR_ASSERT( result );
-
+#if !defined( KOKKOS_USE_KALMAR_SVM )
   auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [=](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
+#else
+  auto fut = tile_for<T[]>(tile_size * tile_len, output_length, [&, result](hc::tiled_index<1> t_idx, tile_buffer<T[]> buffer) [[hc]]
+#endif
   {
       const auto local = t_idx.local[0];
       const auto global = t_idx.global[0];
